@@ -66,6 +66,23 @@ Then ask the agent:
 The `everything_search` and `everything_status` tools become available immediately; no Harness
 restart is needed.
 
+### Option 3: DSH Desktop built-in installer
+
+The DSH Desktop plugin installer (Settings → Plugins → install task, field “Package name or
+address”) accepts these inputs:
+
+| Input | Notes |
+| --- | --- |
+| `C:\path\to\everything-plugin` | **Local directory** (a clone of this repo) — works now, no network needed |
+| `C:\path\to\dsh-plugin-everything-1.0.1.tgz` | **Local release tarball / .tgz path** — works now |
+| `dsh-plugin-everything` | npm package name — available once the package is published to the npm registry |
+| `https://github.com/keyblues/dsh-plugin-everything` | GitHub repository address; pnpm still has to reach github.com, so a restricted network fails with `ECONNRESET` — use the “use mainland China mirror” action or one of the inputs above |
+
+The install target is `~/.dsh/profiles/desktop`; the tools appear immediately after installation.
+
+> On this machine `github.com` is currently unreliable while `api.github.com` and the npm registry
+> work, so prefer the local directory/tarball now, or the npm package name once published.
+
 ### Uninstall
 
 `plugin_manager remove_bundle target=dsh-plugin-everything`, or disable/remove it in
@@ -193,6 +210,31 @@ upgrade, check for a compatible plugin release before restarting or reinstalling
   independently.
 - Display assets: zh/en locale titles/descriptions and `icon.svg` are exported and shipped; icon
   rendering in the GUI still needs a human look (no browser control here).
+
+## Automated publishing
+
+[`.github/workflows/publish.yml`](.github/workflows/publish.yml) publishes the package to the npm
+registry and attaches the packed `.tgz` to the GitHub release:
+
+- pushing a `v*` tag runs `npm publish`, creates/updates the GitHub release and uploads the tarball;
+- the workflow can also be started manually from the Actions tab to publish the version currently
+  in `package.json`.
+
+Configure **one** authentication method on first use:
+
+1. **Trusted publishing (recommended, no long-lived token)**: npmjs.com → package Settings →
+   Trusted Publisher → GitHub Actions with owner `keyblues`, repository `dsh-plugin-everything`
+   and workflow filename `publish.yml`. The workflow runs Node 24 (npm CLI ≥ 11.5.1) and npm picks
+   up the OIDC token automatically.
+2. **NPM_TOKEN**: create a granular npm access token with publish rights and store it as the
+   repository secret `NPM_TOKEN` (Settings → Secrets and variables → Actions).
+
+Manual local publish (fallback):
+
+```powershell
+npm login
+npm publish --access public
+```
 
 ## License
 
