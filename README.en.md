@@ -21,7 +21,8 @@
 
 > **DSH plugin identifier**: this repository is a DeepSeek Harness plugin bundle. Its GitHub
 > topic is [`dsh-plugin`](https://github.com/topics/dsh-plugin), `package.json` declares
-> `dsh.bundle.patch` and the `dsh-plugin` keyword, so DSH community catalogs can discover it by topic.
+> `dsh.bundle.patch`, the `dsh-plugin` keyword and an `engines.dsh` range for the supported
+> DSH versions, so DSH community catalogs can discover it by topic.
 
 ## Why
 
@@ -44,11 +45,11 @@ usually in a few milliseconds.
 
 ### Option 1: release tarball (recommended)
 
-1. Download `dsh-plugin-everything-1.0.0.tgz` from
+1. Download `dsh-plugin-everything-1.0.1.tgz` from
    [Releases](https://github.com/keyblues/dsh-plugin-everything/releases).
 2. Ask the DSH agent to run (use your local path):
 
-   > install the bundle with plugin_manager `install_bundle` target `C:\Downloads\dsh-plugin-everything-1.0.0.tgz`
+   > install the bundle with plugin_manager `install_bundle` target `C:\Downloads\dsh-plugin-everything-1.0.1.tgz`
 
    Or add it through Settings → Plugins.
 
@@ -142,6 +143,34 @@ index.js  ── worker_threads ──▶  sdk-worker.cjs
 - The bundle is self-contained: koffi and the SDK DLL ship inside it — no network access or
   compilation at install time.
 
+## DSH version support
+
+| Item | Value |
+| --- | --- |
+| Declared range (`engines.dsh`) | `>=0.2.1-rc.2 <0.3.0-0` |
+| Tested runtime | DeepSeek Harness **0.2.1-rc.3** (Desktop: Electron 44.7 / Node 24.21 / Node-API 10) |
+| Contract parity evidence | `@deepseek-ai/dsh-app-boot`, `dsh-tools`, `dsh-plugin-manager` and `dsh-package-manifest` publish byte-identical artifacts at 0.2.1-rc.2 and rc.3; every extension point this plugin uses (bundle patch, the `ctx.tools.register` ToolDefinition, plugin display metadata, install and version checks) is unchanged between them |
+| Not covered | **0.2.0 and earlier** (different core package APIs, untested); **0.3.0 and later** (DSH is a developer preview, the range must be re-validated before widening) |
+
+The npm `latest` tag for DSH is currently `0.2.1-rc.2` and the Desktop runtime is `0.2.1-rc.3` —
+both inside the declared range.
+
+DSH enforces the declaration in two places (built into app-boot / plugin-manager in 0.2.1):
+
+- **Install**: local-path and registry specs are checked before pnpm runs and refused with
+  `incompatible-version`; tarball and git specs are judged after installation and rolled back.
+- **Startup**: incompatible bundles are skipped (`skippedBundles`) and incompatible plugin rows
+  are disabled — their modules are never imported.
+
+To run anyway, grant an exact-version exemption (this does not widen the declared range):
+
+```powershell
+dsh plugin --profile desktop allow-version dsh-plugin-everything@1.0.1 --dsh-version <runtime version> --accept-risk
+```
+
+or use `set_version_exemption` in the plugin manager after the user accepts the risk. After a DSH
+upgrade, check for a compatible plugin release before restarting or reinstalling.
+
 ## Compatibility and limits
 
 - **Windows x64 only**; other platforms get an explicit error from the tools.
@@ -150,13 +179,16 @@ index.js  ── worker_threads ──▶  sdk-worker.cjs
 - Results include `$Recycle.Bin`, `WinSxS` and other system directories; exclude them with
   `!$Recycle.Bin` when needed.
 
-## Verification (v1.0.0)
+## Verification
 
 - `install_bundle` reported `application: applied`, `enabled: true`, no warnings.
 - Live queries: `notepad.exe` (18 matches), Unicode file names, `path:`/`file:`/`folder:`/`ext:`
   syntax, size-descending order, truncation counts, empty results and `max` clamping all passed.
 - Failure path: a missing SDK DLL produces a readable `SDK_LOAD_FAILED` error without crashing
   the Host.
+- Version declaration: `engines.dsh` passed the install check on 0.2.1-rc.3, and a probe package
+  declaring `engines.dsh: ">=99.0.0"` was refused by DSH with `incompatible-version`, proving the
+  declaration is enforced.
 - Packaging: the `npm pack` artifact was unpacked and its worker + DLL + koffi loaded and queried
   independently.
 - Display assets: zh/en locale titles/descriptions and `icon.svg` are exported and shipped; icon

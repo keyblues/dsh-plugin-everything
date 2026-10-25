@@ -21,7 +21,8 @@
 
 > **DSH 插件标识**：本仓库是一个 DeepSeek Harness 插件（bundle），仓库 topic 为
 > [`dsh-plugin`](https://github.com/topics/dsh-plugin)，`package.json` 中声明了
-> `dsh.bundle.patch` 与 `dsh-plugin` 关键词，可被 DSH 社区插件目录按 topic 检索收录。
+> `dsh.bundle.patch` 与 `dsh-plugin` 关键词，并通过 `engines.dsh` 显式声明支持的
+> DSH 版本范围，可被 DSH 社区插件目录按 topic 检索收录。
 
 ## 它解决什么问题
 
@@ -43,10 +44,10 @@ Harness 里的 Agent 默认只能在工作区里逐个目录找文件，跨盘�
 ### 方式一：Release 安装包（推荐）
 
 1. 从 [Releases](https://github.com/keyblues/dsh-plugin-everything/releases) 下载
-   `dsh-plugin-everything-1.0.0.tgz`；
+   `dsh-plugin-everything-1.0.1.tgz`；
 2. 在 DSH 里让 Agent 执行（把路径换成本机实际路径）：
 
-   > 用 plugin_manager 的 install_bundle 安装 `C:\Downloads\dsh-plugin-everything-1.0.0.tgz`
+   > 用 plugin_manager 的 install_bundle 安装 `C:\Downloads\dsh-plugin-everything-1.0.1.tgz`
 
    或者把该文件拖给 DSH 插件管理器（Settings → Plugins）安装。
 
@@ -141,6 +142,33 @@ index.js  ── worker_threads ──▶  sdk-worker.cjs
   worker，下一次查询自动重建。
 - 插件为自包含 bundle：koffi 与 SDK DLL 都随包分发，**安装时不需要联网、不需要编译**。
 
+## DSH 版本支持
+
+| 项目 | 说明 |
+| --- | --- |
+| 声明范围（`engines.dsh`） | `>=0.2.1-rc.2 <0.3.0-0` |
+| 实测版本 | DeepSeek Harness **0.2.1-rc.3**（Desktop：Electron 44.7 / Node 24.21 / Node-API 10） |
+| 契约一致性依据 | `@deepseek-ai/dsh-app-boot`、`dsh-tools`、`dsh-plugin-manager`、`dsh-package-manifest` 在 0.2.1-rc.2 与 rc.3 的发布产物逐字节一致；插件用到的扩展点（bundle patch、`ctx.tools.register` 的 ToolDefinition、插件显示元数据、安装与版本校验）在这两个版本间没有差异 |
+| 不在范围内 | **0.2.0 及更早**（核心包 API 不同，未验证）；**0.3.0 及以后**（DSH 仍为 developer preview，需重新验证后再放宽） |
+
+npm 上 DSH 的 `latest` 标签当前是 `0.2.1-rc.2`，Desktop 运行时是 `0.2.1-rc.3`，都在声明范围内。
+
+DSH 会在两处强制执行该声明（0.2.1 的 app-boot / plugin-manager 已内置）：
+
+- **安装时**：本地路径 / registry 包在 pnpm 运行前检查，不满足直接以 `incompatible-version`
+  拒绝；tarball / git spec 在安装后判定并回滚。
+- **启动时**：不兼容的 bundle 会被跳过（`skippedBundles`）、不兼容的插件行会被禁用，
+  插件模块不会被 import。
+
+确实需要冒险运行时，用**精确版本豁免**（不会放宽声明的范围）：
+
+```powershell
+dsh plugin --profile desktop allow-version dsh-plugin-everything@1.0.1 --dsh-version <运行时版本> --accept-risk
+```
+
+或在插件管理器里调用 `set_version_exemption`（需用户明确接受风险）。DSH 升级后，请先确认
+本插件是否已发布兼容版本，再重启或重新安装。
+
 ## 兼容性与限制
 
 - 仅 **Windows x64**；非 Windows 或 32 位环境下工具会返回明确错误。
@@ -148,12 +176,14 @@ index.js  ── worker_threads ──▶  sdk-worker.cjs
 - 搜索结果是 Everything 的索引快照，刚创建/移动的文件可能有秒级延迟。
 - 结果包括 `$Recycle.Bin`、`WinSxS` 等系统目录；需要时用 `!$Recycle.Bin` 等语法排除。
 
-## 验证记录（v1.0.0）
+## 验证记录
 
 - `install_bundle` 安装返回 `application: applied`、`enabled: true`、无 warning。
 - 真实查询：`notepad.exe`（18 命中）、中文文件名、`path:`/`file:`/`folder:`/`ext:`
   语法、`size` 倒序、截断计数、空结果、`max` 越界钳制均通过。
 - 异常路径：SDK DLL 缺失时返回可读的 `SDK_LOAD_FAILED` 错误，Host 不崩溃。
+- 版本声明：`engines.dsh` 在 0.2.1-rc.3 上安装校验通过；构造的 `engines.dsh: ">=99.0.0"`
+  探针包被 DSH 以 `incompatible-version` 拒绝，证明声明确实生效。
 - 打包校验：`npm pack` 产物解包后，worker + DLL + koffi 可独立加载查询。
 - 显示资源：中英文 locale 标题/描述与 `icon.svg` 已导出并随包分发；GUI 内的图标渲染
   需要人工确认（自动化环境无浏览器控制）。
@@ -161,10 +191,10 @@ index.js  ── worker_threads ──▶  sdk-worker.cjs
 ## 发布流程（维护者）
 
 ```powershell
-npm pack               # 生成 dsh-plugin-everything-1.0.0.tgz
-git tag v1.0.0
+npm pack               # 生成 dsh-plugin-everything-1.0.1.tgz
+git tag v1.0.1
 git push --tags
-gh release create v1.0.0 dsh-plugin-everything-1.0.0.tgz --title v1.0.0 --notes-file CHANGELOG.md
+gh release create v1.0.1 dsh-plugin-everything-1.0.1.tgz --title v1.0.1 --notes-file CHANGELOG.md
 ```
 
 ## 许可

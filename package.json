@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-everything",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "DeepSeek Harness (DSH) plugin: instant whole-disk file search through the local voidtools Everything index. DSH 插件：接入本机 Everything 索引，全盘秒级搜索文件。",
   "keywords": [
     "dsh-plugin",
@@ -13,6 +13,9 @@
     "plugin"
   ],
   "license": "MIT",
+  "engines": {
+    "dsh": ">=0.2.1-rc.2 <0.3.0-0"
+  },
   "author": {
     "name": "keyblues",
     "url": "https://github.com/keyblues"
