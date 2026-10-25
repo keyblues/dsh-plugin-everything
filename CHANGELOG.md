@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.0.2 (2026-10-25)
+
+- 配置 **npm Trusted Publishing**：npm 包 `dsh-plugin-everything` 信任
+  `.github/workflows/publish.yml`（GitHub Actions OIDC，无需长期 token）。
+  以后推送 `v*` tag 或在 Actions 手动 Run workflow，会自动 `npm publish` 并更新
+  GitHub Release + 上传 `.tgz`。
+- README 增加 npm 徽章与"已发布到 npm"的安装说明（DSH 桌面端安装器可直接填包名）。
+- 功能与 v1.0.1 一致。
+
 ## v1.0.1 (2026-10-25)
 
 - 已发布到 npm registry：`dsh-plugin-everything@1.0.1`（shasum `cda09297ca6813678fcd1d5591e0dd8ea59e684a`），

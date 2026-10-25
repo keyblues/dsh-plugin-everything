@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-everything",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "DeepSeek Harness (DSH) plugin: instant whole-disk file search through the local voidtools Everything index. DSH 插件：接入本机 Everything 索引，全盘秒级搜索文件。",
   "keywords": [
     "dsh-plugin",
