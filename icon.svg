@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-label="Everything file search">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#123A56"/>
+      <stop offset="1" stop-color="#0A2236"/>
+    </linearGradient>
+    <linearGradient id="lens" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7DD3FC"/>
+      <stop offset="1" stop-color="#38BDF8"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="92" height="92" rx="22" fill="url(#bg)"/>
+  <g opacity="0.35" stroke="#38BDF8" stroke-width="1.5">
+    <circle cx="42" cy="42" r="30" fill="none"/>
+    <circle cx="42" cy="42" r="24" fill="none"/>
+  </g>
+  <circle cx="42" cy="42" r="19" fill="none" stroke="url(#lens)" stroke-width="6"/>
+  <g stroke="#E0F2FE" stroke-width="3" stroke-linecap="round" opacity="0.9">
+    <path d="M33 34h13"/>
+    <path d="M33 41h18"/>
+    <path d="M33 48h9"/>
+  </g>
+  <path d="M56 56 76 76" stroke="url(#lens)" stroke-width="9" stroke-linecap="round"/>
+  <path d="M69 26 58 44h9l-7 16 18-21h-10l6-13z" fill="#FBBF24" stroke="#0A2236" stroke-width="2" stroke-linejoin="round"/>
+</svg>

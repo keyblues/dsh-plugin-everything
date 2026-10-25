@@ -1,0 +1,67 @@
+{
+  "name": "dsh-plugin-everything",
+  "version": "1.0.0",
+  "description": "DeepSeek Harness (DSH) plugin: instant whole-disk file search through the local voidtools Everything index. DSH 插件：接入本机 Everything 索引，全盘秒级搜索文件。",
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "dsh",
+    "everything",
+    "voidtools",
+    "file-search",
+    "search",
+    "plugin"
+  ],
+  "license": "MIT",
+  "author": {
+    "name": "keyblues",
+    "url": "https://github.com/keyblues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/keyblues/dsh-plugin-everything.git"
+  },
+  "homepage": "https://github.com/keyblues/dsh-plugin-everything#readme",
+  "bugs": {
+    "url": "https://github.com/keyblues/dsh-plugin-everything/issues"
+  },
+  "type": "module",
+  "os": [
+    "win32"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "exports": {
+    ".": "./index.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "sdk-worker.cjs",
+    "native/Everything64.dll",
+    "vendor/koffi/index.cjs",
+    "vendor/koffi/package.json",
+    "vendor/koffi/LICENSE.txt",
+    "vendor/koffi/src/koffi/index.cjs",
+    "vendor/koffi/src/koffi/src/static.cjs",
+    "vendor/@koromix/koffi-win32-x64/package.json",
+    "vendor/@koromix/koffi-win32-x64/index.js",
+    "vendor/@koromix/koffi-win32-x64/README.md",
+    "vendor/@koromix/koffi-win32-x64/win32_x64/koffi.node",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "README.en.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

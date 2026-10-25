@@ -1,0 +1,4 @@
+- insert:
+    - id: everything
+      name: 'dsh-plugin-everything'
+      config: {}
