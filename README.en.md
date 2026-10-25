@@ -10,6 +10,7 @@
   <img alt="Platform" src="https://img.shields.io/badge/platform-Windows%20x64-0078D4?style=flat-square">
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-green?style=flat-square"></a>
   <a href="https://github.com/keyblues/dsh-plugin-everything/releases"><img alt="Release" src="https://img.shields.io/github/v/release/keyblues/dsh-plugin-everything?style=flat-square"></a>
+  <a href="https://www.npmjs.com/package/dsh-plugin-everything"><img alt="npm" src="https://img.shields.io/npm/v/dsh-plugin-everything?style=flat-square"></a>
 </p>
 
 <p align="center">
@@ -75,7 +76,7 @@ address”) accepts these inputs:
 | --- | --- |
 | `C:\path\to\everything-plugin` | **Local directory** (a clone of this repo) — works now, no network needed |
 | `C:\path\to\dsh-plugin-everything-1.0.1.tgz` | **Local release tarball / .tgz path** — works now |
-| `dsh-plugin-everything` | npm package name — available once the package is published to the npm registry |
+| `dsh-plugin-everything` | **npm package name (published, recommended)**: the installer pulls `1.0.1` straight from the npm registry |
 | `https://github.com/keyblues/dsh-plugin-everything` | GitHub repository address; pnpm still has to reach github.com, so a restricted network fails with `ECONNRESET` — use the “use mainland China mirror” action or one of the inputs above |
 
 The install target is `~/.dsh/profiles/desktop`; the tools appear immediately after installation.

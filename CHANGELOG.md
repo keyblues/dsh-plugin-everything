@@ -2,6 +2,8 @@
 
 ## v1.0.1 (2026-10-25)
 
+- 已发布到 npm registry：`dsh-plugin-everything@1.0.1`（shasum `cda09297ca6813678fcd1d5591e0dd8ea59e684a`），
+  DSH 桌面端安装器可直接填包名 `dsh-plugin-everything` 安装。
 - 新增 `engines.dsh: ">=0.2.1-rc.2 <0.3.0-0"`：显式声明支持的 DSH 版本范围。
   DSH 会在安装与启动时据此检查——不兼容的 DSH（例如 0.2.0、0.3.0）会拒绝安装或在
   启动时跳过本插件，而不是静默加载后出错；确需运行时可用 `dsh plugin allow-version`

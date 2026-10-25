@@ -10,6 +10,7 @@
   <img alt="Platform" src="https://img.shields.io/badge/platform-Windows%20x64-0078D4?style=flat-square">
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-green?style=flat-square"></a>
   <a href="https://github.com/keyblues/dsh-plugin-everything/releases"><img alt="Release" src="https://img.shields.io/github/v/release/keyblues/dsh-plugin-everything?style=flat-square"></a>
+  <a href="https://www.npmjs.com/package/dsh-plugin-everything"><img alt="npm" src="https://img.shields.io/npm/v/dsh-plugin-everything?style=flat-square"></a>
 </p>
 
 <p align="center">
@@ -72,7 +73,7 @@ DSH Desktop 的「插件 → 查看安装任务」安装框（字段提示「包
 | --- | --- |
 | `C:\path\to\everything-plugin` | **本地目录**（clone 下来的仓库目录）；**现在就能用，不依赖网络** |
 | `C:\path\to\dsh-plugin-everything-1.0.1.tgz` | **本地 release 包 / .tgz 路径**；**现在就能用** |
-| `dsh-plugin-everything` | npm 包名；需要先发布到 npm registry（发布后最省事） |
+| `dsh-plugin-everything` | **npm 包名（已发布，推荐）**：安装器直接从 npm registry 安装 `1.0.1` |
 | `https://github.com/keyblues/dsh-plugin-everything` | GitHub 仓库地址；安装时 pnpm 仍需直连 github.com，网络受限时会 `ECONNRESET`，可用界面上的「改用国内镜像」或改用包名/本地路径 |
 
 安装位置会显示为 `~/.dsh/profiles/desktop`，装完立即生效（工具直接出现）。
