@@ -44,45 +44,56 @@ usually in a few milliseconds.
 
 ## Install
 
-### Option 1: release tarball (recommended)
+**TL;DR: in DSH Desktop open Plugins → install task and enter `dsh-plugin-everything`.**
+The installer pulls the latest version from the npm registry (currently `1.0.2`); the
+`everything_search` / `everything_status` tools appear immediately, no Harness restart needed.
 
-1. Download `dsh-plugin-everything-1.0.1.tgz` from
+### Option 1: npm package (recommended)
+
+DSH Desktop: Plugins → install task → enter `dsh-plugin-everything`
+(use `dsh-plugin-everything@1.0.2` to pin a version).
+
+DSH CLI (desktop profile must be initialized and Desktop fully quit first):
+
+```powershell
+dsh plugin --profile desktop add dsh-plugin-everything
+```
+
+Update to the latest version by running the same `add` again.
+
+> - npm page: <https://www.npmjs.com/package/dsh-plugin-everything>
+> - latest version: `npm view dsh-plugin-everything version`
+
+### Option 2: GitHub release tarball / local `.tgz` (offline, pinned version)
+
+1. Download `dsh-plugin-everything-1.0.2.tgz` from
    [Releases](https://github.com/keyblues/dsh-plugin-everything/releases).
-2. Ask the DSH agent to run (use your local path):
+2. Enter that tarball's absolute path in the Desktop installer
+   (e.g. `C:\Downloads\dsh-plugin-everything-1.0.2.tgz`), or ask the agent to run
+   `plugin_manager install_bundle target=<tgz path>`.
 
-   > install the bundle with plugin_manager `install_bundle` target `C:\Downloads\dsh-plugin-everything-1.0.1.tgz`
+Useful when npm is unavailable or a fixed version must be installed offline.
 
-   Or add it through Settings → Plugins.
-
-### Option 2: from source
+### Option 3: local source directory (development / debugging)
 
 ```powershell
 git clone https://github.com/keyblues/dsh-plugin-everything.git
 ```
 
-Then ask the agent:
+Enter the directory's absolute path in the Desktop installer, or ask the agent to run
+`plugin_manager install_bundle target=<directory>`. Reinstall after editing the source.
 
-> install the bundle with plugin_manager `install_bundle` target `C:\path\to\dsh-plugin-everything`
-
-The `everything_search` and `everything_status` tools become available immediately; no Harness
-restart is needed.
-
-### Option 3: DSH Desktop built-in installer
-
-The DSH Desktop plugin installer (Settings → Plugins → install task, field “Package name or
-address”) accepts these inputs:
+### Inputs accepted by the Desktop installer
 
 | Input | Notes |
 | --- | --- |
-| `C:\path\to\everything-plugin` | **Local directory** (a clone of this repo) — works now, no network needed |
-| `C:\path\to\dsh-plugin-everything-1.0.1.tgz` | **Local release tarball / .tgz path** — works now |
-| `dsh-plugin-everything` | **npm package name (published, recommended)**: the installer pulls `1.0.1` straight from the npm registry |
+| `dsh-plugin-everything` | **npm package name (recommended)**: installs the latest version from the npm registry |
+| `dsh-plugin-everything@1.0.2` | npm package name with a pinned version |
+| `C:\Downloads\dsh-plugin-everything-1.0.2.tgz` | local release tarball / `.tgz` path |
+| `C:\path\to\everything-plugin` | local directory (a clone of this repository) |
 | `https://github.com/keyblues/dsh-plugin-everything` | GitHub repository address; pnpm still has to reach github.com, so a restricted network fails with `ECONNRESET` — use the “use mainland China mirror” action or one of the inputs above |
 
 The install target is `~/.dsh/profiles/desktop`; the tools appear immediately after installation.
-
-> On this machine `github.com` is currently unreliable while `api.github.com` and the npm registry
-> work, so prefer the local directory/tarball now, or the npm package name once published.
 
 ### Uninstall
 
@@ -183,7 +194,7 @@ DSH enforces the declaration in two places (built into app-boot / plugin-manager
 To run anyway, grant an exact-version exemption (this does not widen the declared range):
 
 ```powershell
-dsh plugin --profile desktop allow-version dsh-plugin-everything@1.0.1 --dsh-version <runtime version> --accept-risk
+dsh plugin --profile desktop allow-version dsh-plugin-everything@1.0.2 --dsh-version <runtime version> --accept-risk
 ```
 
 or use `set_version_exemption` in the plugin manager after the user accepts the risk. After a DSH
@@ -215,27 +226,32 @@ upgrade, check for a compatible plugin release before restarting or reinstalling
 ## Automated publishing
 
 [`.github/workflows/publish.yml`](.github/workflows/publish.yml) publishes the package to the npm
-registry and attaches the packed `.tgz` to the GitHub release:
+registry and attaches the packed `.tgz` to the GitHub release. **npm Trusted Publishing** is already
+configured (GitHub Actions OIDC, no long-lived token):
 
-- pushing a `v*` tag runs `npm publish`, creates/updates the GitHub release and uploads the tarball;
-- the workflow can also be started manually from the Actions tab to publish the version currently
-  in `package.json`.
+```
+package:     dsh-plugin-everything
+workflow:    publish.yml
+repository:  keyblues/dsh-plugin-everything
+permissions: publish, stage publish
+trust id:    3aa47032-1bb5-4253-a6d6-7f92ca5b19ce
+```
 
-Configure **one** authentication method on first use:
-
-1. **Trusted publishing (recommended, no long-lived token)**: npmjs.com → package Settings →
-   Trusted Publisher → GitHub Actions with owner `keyblues`, repository `dsh-plugin-everything`
-   and workflow filename `publish.yml`. The workflow runs Node 24 (npm CLI ≥ 11.5.1) and npm picks
-   up the OIDC token automatically.
-2. **NPM_TOKEN**: create a granular npm access token with publish rights and store it as the
-   repository secret `NPM_TOKEN` (Settings → Secrets and variables → Actions).
-
-Manual local publish (fallback):
+Release flow:
 
 ```powershell
-npm login
-npm publish --access public
+# 1. bump version in package.json + CHANGELOG
+git commit -am "chore(release): vX.Y.Z"
+git tag vX.Y.Z
+# 2. push the tag to publish
+git push origin main --tags
 ```
+
+The workflow packs the bundle, runs `npm publish` (with provenance), then creates/updates the
+GitHub release and uploads the tarball. It can also be started manually from the Actions tab to
+publish the version currently in `package.json`.
+
+Fallback without OIDC: `npm login` followed by `npm publish --access public` (2FA required).
 
 ## License
 

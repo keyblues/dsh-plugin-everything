@@ -42,44 +42,57 @@ Harness 里的 Agent 默认只能在工作区里逐个目录找文件，跨盘�
 
 ## 安装
 
-### 方式一：Release 安装包（推荐）
+**最简：DSH 桌面端 → 插件 → 查看安装任务，在输入框里填 `dsh-plugin-everything` 即可。**
+安装器会从 npm registry 拉取最新版（当前 `1.0.2`），装完 `everything_search` /
+`everything_status` 立即出现，无需重启 Harness。
+
+### 方式一：npm 包（推荐）
+
+DSH 桌面端：插件 → 查看安装任务 → 输入 `dsh-plugin-everything`
+（指定版本写 `dsh-plugin-everything@1.0.2`）。
+
+DSH CLI（需先初始化 desktop profile，并在 Desktop 完全退出后执行）：
+
+```powershell
+dsh plugin --profile desktop add dsh-plugin-everything
+```
+
+更新到最新版：重复执行一次上述 `add`。固定版本用 `dsh-plugin-everything@<version>`。
+
+> - npm 包页：<https://www.npmjs.com/package/dsh-plugin-everything>
+> - 查看最新版本：`npm view dsh-plugin-everything version`
+
+### 方式二：GitHub Release / 本地 `.tgz`（离线、固定版本）
 
 1. 从 [Releases](https://github.com/keyblues/dsh-plugin-everything/releases) 下载
-   `dsh-plugin-everything-1.0.1.tgz`；
-2. 在 DSH 里让 Agent 执行（把路径换成本机实际路径）：
+   `dsh-plugin-everything-1.0.2.tgz`；
+2. 在桌面端安装框直接填该文件的绝对路径
+   （如 `C:\Downloads\dsh-plugin-everything-1.0.2.tgz`），或让 Agent 执行
+   `plugin_manager install_bundle target=<tgz 路径>`。
 
-   > 用 plugin_manager 的 install_bundle 安装 `C:\Downloads\dsh-plugin-everything-1.0.1.tgz`
+适合 npm 不可用、需要固定版本或离线安装的场景。
 
-   或者把该文件拖给 DSH 插件管理器（Settings → Plugins）安装。
-
-### 方式二：源码目录安装
+### 方式三：本地源码目录（开发 / 调试）
 
 ```powershell
 git clone https://github.com/keyblues/dsh-plugin-everything.git
 ```
 
-然后让 Agent 执行：
+在桌面端安装框填目录绝对路径，或让 Agent 执行
+`plugin_manager install_bundle target=<目录路径>`。
+修改代码后重新安装一次即可生效。
 
-> 用 plugin_manager 的 install_bundle 安装 `C:\path\to\dsh-plugin-everything`
-
-安装完成后，`everything_search` 与 `everything_status` 两个工具立即出现在会话里，
-无需重启 Harness。
-
-### 方式三：DSH 桌面端自带安装器
-
-DSH Desktop 的「插件 → 查看安装任务」安装框（字段提示「包名或地址」）支持以下输入：
+### 桌面端安装器支持的输入
 
 | 输入 | 说明 |
 | --- | --- |
-| `C:\path\to\everything-plugin` | **本地目录**（clone 下来的仓库目录）；**现在就能用，不依赖网络** |
-| `C:\path\to\dsh-plugin-everything-1.0.1.tgz` | **本地 release 包 / .tgz 路径**；**现在就能用** |
-| `dsh-plugin-everything` | **npm 包名（已发布，推荐）**：安装器直接从 npm registry 安装 `1.0.1` |
-| `https://github.com/keyblues/dsh-plugin-everything` | GitHub 仓库地址；安装时 pnpm 仍需直连 github.com，网络受限时会 `ECONNRESET`，可用界面上的「改用国内镜像」或改用包名/本地路径 |
+| `dsh-plugin-everything` | **npm 包名（推荐）**：从 npm registry 安装最新版 |
+| `dsh-plugin-everything@1.0.2` | npm 包名 + 指定版本 |
+| `C:\Downloads\dsh-plugin-everything-1.0.2.tgz` | 本地 Release 包 / `.tgz` 路径 |
+| `C:\path\to\everything-plugin` | 本地目录（clone 的源码目录） |
+| `https://github.com/keyblues/dsh-plugin-everything` | GitHub 仓库地址；安装时 pnpm 仍需直连 github.com，网络受限时会 `ECONNRESET`，可点界面上的「改用国内镜像」，或改用包名 / 本地路径 |
 
-安装位置会显示为 `~/.dsh/profiles/desktop`，装完立即生效（工具直接出现）。
-
-> 本机当前的 `github.com` 直连不稳定（`api.github.com`、npm registry 正常），
-> 因此「GitHub 仓库地址」形式容易卡住；请优先用**本地目录 / 本地 tgz**，或等发布后用 **npm 包名**。
+安装位置为 `~/.dsh/profiles/desktop`，装完立即生效（工具直接出现，无需重启）。
 
 ### 卸载
 
@@ -180,7 +193,7 @@ DSH 会在两处强制执行该声明（0.2.1 的 app-boot / plugin-manager 已�
 确实需要冒险运行时，用**精确版本豁免**（不会放宽声明的范围）：
 
 ```powershell
-dsh plugin --profile desktop allow-version dsh-plugin-everything@1.0.1 --dsh-version <运行时版本> --accept-risk
+dsh plugin --profile desktop allow-version dsh-plugin-everything@1.0.2 --dsh-version <运行时版本> --accept-risk
 ```
 
 或在插件管理器里调用 `set_version_exemption`（需用户明确接受风险）。DSH 升级后，请先确认
@@ -207,25 +220,31 @@ dsh plugin --profile desktop allow-version dsh-plugin-everything@1.0.1 --dsh-ver
 
 ## 发布流程（维护者）
 
-npm 发布由 [`.github/workflows/publish.yml`](.github/workflows/publish.yml) 自动完成：
+npm 发布由 [`.github/workflows/publish.yml`](.github/workflows/publish.yml) 自动完成，已配置
+**npm Trusted Publishing**（GitHub Actions OIDC，无需长期 token）：
 
-- 推送 `v*` tag → `npm publish`，并自动创建/更新 GitHub Release、附加打包好的 `.tgz`；
-- 也可在仓库 Actions 页面手动 **Run workflow** 发布 `package.json` 里的当前版本。
+```
+package:     dsh-plugin-everything
+workflow:    publish.yml
+repository:  keyblues/dsh-plugin-everything
+permissions: publish, stage publish
+trust id:    3aa47032-1bb5-4253-a6d6-7f92ca5b19ce
+```
 
-首次需要配置一种认证（二选一）：
-
-1. **Trusted Publishing（推荐，无长期 token）**：在 npmjs.com 的包 Settings → Trusted Publisher →
-   GitHub Actions，填 owner=`keyblues`、repository=`dsh-plugin-everything`、workflow filename=`publish.yml`。
-   workflow 使用 Node 24（npm CLI 已满足 ≥ 11.5.1 的要求），npm 会自动用 OIDC 认证。
-2. **NPM_TOKEN**：在 npm 生成 granular access token（含 publish 权限），保存为仓库
-   Settings → Secrets and variables → Actions 的 `NPM_TOKEN`。
-
-本地手动发布（备用）：
+发版步骤：
 
 ```powershell
-npm login
-npm publish --access public
+# 1. 修改 package.json 的 version 与 CHANGELOG
+git commit -am "chore(release): vX.Y.Z"
+git tag vX.Y.Z
+# 2. 推送 tag 触发发布
+git push origin main --tags
 ```
+
+Actions 会自动 `npm pack` → `npm publish`（带 provenance）→ 创建/更新 GitHub Release
+并上传 `.tgz`。也可在 Actions 页面手动 **Run workflow**，发布 `package.json` 里的当前版本。
+
+备用方式（无 OIDC 环境）：本地 `npm login` 后执行 `npm publish --access public`（需要 2FA）。
 
 ## 许可
 

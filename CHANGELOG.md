@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- README：重写安装方式，以 **npm 包名**为首选（DSH 桌面端安装框直接填
+  `dsh-plugin-everything`，或 CLI `dsh plugin --profile desktop add dsh-plugin-everything`）；
+  本地 `.tgz` 与源码目录作为离线/开发备选，并补充桌面端安装器输入对照表、更新方式与发版说明。
+
 ## v1.0.2 (2026-10-25)
 
 - 配置 **npm Trusted Publishing**：npm 包 `dsh-plugin-everything` 信任
