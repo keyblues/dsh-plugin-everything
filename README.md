@@ -43,13 +43,13 @@ Harness 里的 Agent 默认只能在工作区里逐个目录找文件，跨盘�
 ## 安装
 
 **最简：DSH 桌面端 → 插件 → 查看安装任务，在输入框里填 `dsh-plugin-everything` 即可。**
-安装器会从 npm registry 拉取最新版（当前 `1.0.2`），装完 `everything_search` /
+安装器会从 npm registry 拉取最新版（当前 `1.0.3`），装完 `everything_search` /
 `everything_status` 立即出现，无需重启 Harness。
 
 ### 方式一：npm 包（推荐）
 
 DSH 桌面端：插件 → 查看安装任务 → 输入 `dsh-plugin-everything`
-（指定版本写 `dsh-plugin-everything@1.0.2`）。
+（指定版本写 `dsh-plugin-everything@1.0.3`）。
 
 DSH CLI（需先初始化 desktop profile，并在 Desktop 完全退出后执行）：
 
@@ -65,9 +65,9 @@ dsh plugin --profile desktop add dsh-plugin-everything
 ### 方式二：GitHub Release / 本地 `.tgz`（离线、固定版本）
 
 1. 从 [Releases](https://github.com/keyblues/dsh-plugin-everything/releases) 下载
-   `dsh-plugin-everything-1.0.2.tgz`；
+   `dsh-plugin-everything-1.0.3.tgz`；
 2. 在桌面端安装框直接填该文件的绝对路径
-   （如 `C:\Downloads\dsh-plugin-everything-1.0.2.tgz`），或让 Agent 执行
+   （如 `C:\Downloads\dsh-plugin-everything-1.0.3.tgz`），或让 Agent 执行
    `plugin_manager install_bundle target=<tgz 路径>`。
 
 适合 npm 不可用、需要固定版本或离线安装的场景。
@@ -87,8 +87,8 @@ git clone https://github.com/keyblues/dsh-plugin-everything.git
 | 输入 | 说明 |
 | --- | --- |
 | `dsh-plugin-everything` | **npm 包名（推荐）**：从 npm registry 安装最新版 |
-| `dsh-plugin-everything@1.0.2` | npm 包名 + 指定版本 |
-| `C:\Downloads\dsh-plugin-everything-1.0.2.tgz` | 本地 Release 包 / `.tgz` 路径 |
+| `dsh-plugin-everything@1.0.3` | npm 包名 + 指定版本 |
+| `C:\Downloads\dsh-plugin-everything-1.0.3.tgz` | 本地 Release 包 / `.tgz` 路径 |
 | `C:\path\to\everything-plugin` | 本地目录（clone 的源码目录） |
 | `https://github.com/keyblues/dsh-plugin-everything` | GitHub 仓库地址；安装时 pnpm 仍需直连 github.com，网络受限时会 `ECONNRESET`，可点界面上的「改用国内镜像」，或改用包名 / 本地路径 |
 
@@ -193,7 +193,7 @@ DSH 会在两处强制执行该声明（0.2.1 的 app-boot / plugin-manager 已�
 确实需要冒险运行时，用**精确版本豁免**（不会放宽声明的范围）：
 
 ```powershell
-dsh plugin --profile desktop allow-version dsh-plugin-everything@1.0.2 --dsh-version <运行时版本> --accept-risk
+dsh plugin --profile desktop allow-version dsh-plugin-everything@1.0.3 --dsh-version <运行时版本> --accept-risk
 ```
 
 或在插件管理器里调用 `set_version_exemption`（需用户明确接受风险）。DSH 升级后，请先确认

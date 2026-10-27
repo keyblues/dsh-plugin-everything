@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v1.0.3 (2026-10-27)
 
 - 精简模型可见的工具描述（`everything_search` / `everything_status` 及参数说明）：
   说明文字压缩约 37%，把参数规则并入参数本身，降低每次请求的上下文占用；工具行为与参数不变。
