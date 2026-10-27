@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- 精简模型可见的工具描述（`everything_search` / `everything_status` 及参数说明）：
+  说明文字压缩约 37%，把参数规则并入参数本身，降低每次请求的上下文占用；工具行为与参数不变。
 - README：重写安装方式，以 **npm 包名**为首选（DSH 桌面端安装框直接填
   `dsh-plugin-everything`，或 CLI `dsh plugin --profile desktop add dsh-plugin-everything`）；
   本地 `.tgz` 与源码目录作为离线/开发备选，并补充桌面端安装器输入对照表、更新方式与发版说明。

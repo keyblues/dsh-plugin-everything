@@ -256,31 +256,30 @@ function buildSearchTool(options) {
   return {
     name: 'everything_search',
     description:
-      'Search local files and folders by name instantly through the voidtools Everything index, across every indexed NTFS volume on this machine. ' +
-      'Use this instead of walking directories when you need to locate files anywhere on disk; follow up with read/grep to inspect contents. ' +
-      'Everything syntax: space-separated terms are ANDed, | means OR, ! excludes, quotes group spaces, wildcards * and ? work, and search functions include ' +
-      'ext:pdf, file:, folder:, path:"C:\\work", size:>10mb, dm:today, and regex:. ' +
-      'Plain terms match file and folder names; prefix a term with a backslash to match paths.',
+      'Instant filename search over every volume indexed by the local voidtools Everything client. ' +
+      'Locate files anywhere on disk instead of walking directories, then read/grep to inspect contents. ' +
+      'Query syntax: space = AND, | = OR, ! = exclude, quotes group spaces, * ? = wildcards; ' +
+      'filters: ext:, file:, folder:, path:, size:, dm:, regex:; \\ prefix matches paths.',
     parameters: {
       type: 'object',
       additionalProperties: false,
       properties: {
         query: {
           type: 'string',
-          description: 'Everything search expression, for example "report 2024 ext:pdf", "file:*.md path:\\"C:\\\\work\\"", or "folder:node_modules".'
+          description: 'Everything query, e.g. "report 2024 ext:pdf" or "folder:node_modules".'
         },
         max: {
           type: 'integer',
-          description: `Maximum number of results to return (1-${MAX_RESULTS_CEILING}). Defaults to the plugin config (${config.maxResults}).`
+          description: `Maximum results, 1-${MAX_RESULTS_CEILING}; defaults to the plugin config (${config.maxResults}).`
         },
         sort: {
           type: 'string',
           enum: sortNames,
-          description: 'Result ordering: name (default), path, size, date-created, date-modified, or recent.'
+          description: 'Sort order; defaults to name.'
         },
         descending: {
           type: 'boolean',
-          description: 'Reverse the chosen sort order. Defaults to false (ascending).'
+          description: 'Reverse the sort order.'
         }
       },
       required: ['query']
@@ -358,8 +357,8 @@ function buildStatusTool(options) {
   return {
     name: 'everything_status',
     description:
-      'Report whether the local voidtools Everything client is reachable by this Harness, which versions are running, how many items the index holds, and where the SDK DLL lives. ' +
-      'Use it when a search fails or the user asks whether Everything is installed or ready.',
+      'Check the local voidtools Everything client: availability, version, indexed item count, SDK DLL path. ' +
+      'Use when a search fails or the user asks whether Everything is ready.',
     parameters: {
       type: 'object',
       additionalProperties: false,
