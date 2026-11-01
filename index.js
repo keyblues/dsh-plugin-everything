@@ -8,6 +8,12 @@
 // Tools:
 //   everything_search - instant file/folder name search over every indexed volume
 //   everything_status - availability, client version, index size, diagnostics
+//
+// Presentation: both tools declare `output.presentationMeta`, the Host-supported
+// bridge that persists a compact JSON projection with the result. The matching
+// Client half (./client.js) registers a `tool.call.toolview` card for each wire
+// tool name and renders that projection; the model-facing `output.render` text is
+// untouched by the cards.
 
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
@@ -23,6 +29,10 @@ const DEFAULT_EVERYTHING_EXE = 'C:\\Program Files\\Everything\\Everything.exe';
 const SUPPORTED = process.platform === 'win32' && process.arch === 'x64';
 const PLATFORM = `${process.platform}-${process.arch}`;
 const MAX_RESULTS_CEILING = 500;
+/** Result rows projected into presentation metadata; the model-facing text lists every row. */
+const CARD_ROW_LIMIT = 100;
+/** Version of the plugin-owned presentation metadata contract (`output.presentationMeta`). */
+const CARD_META_VERSION = 1;
 
 /** Everything 1.4 sort constants (ascending; descending is the next value). */
 const SORTS = {
@@ -250,6 +260,62 @@ function renderStatus(args, value) {
   return [{ type: 'text', text: lines.join('\n') }];
 }
 
+/**
+ * Persisted presentation projection for `everything_search`.
+ * The Client card reads this instead of re-parsing the model-facing text, so a
+ * path containing parentheses or a comma can never be misread. Rows are capped
+ * at CARD_ROW_LIMIT to keep the Session log small; `shown`/`returned` let the
+ * card disclose the cap honestly.
+ */
+function searchCardMeta(args, value) {
+  const all = Array.isArray(value.results) ? value.results : [];
+  const results = [];
+  for (const item of all) {
+    if (results.length >= CARD_ROW_LIMIT) break;
+    if (item === null || typeof item !== 'object') continue;
+    if (typeof item.path !== 'string' || item.path === '') continue;
+    const name = typeof item.name === 'string' && item.name !== '' ? item.name : item.path;
+    if (item.folder === true) {
+      results.push({ path: item.path, name, folder: true });
+      continue;
+    }
+    results.push({
+      path: item.path,
+      name,
+      folder: false,
+      ...(Number.isFinite(item.size) ? { size: item.size } : {}),
+      ...(typeof item.modified === 'string' ? { modified: item.modified } : {})
+    });
+  }
+  return {
+    version: CARD_META_VERSION,
+    query: typeof value.query === 'string' ? value.query : '',
+    total: value.total,
+    returned: value.returned,
+    truncated: value.truncated === true,
+    sort: typeof args.sort === 'string' ? args.sort : 'name',
+    descending: args.descending === true,
+    shown: results.length,
+    results
+  };
+}
+
+/** Persisted presentation projection for `everything_status`. */
+function statusCardMeta(_args, value) {
+  const meta = {
+    version: CARD_META_VERSION,
+    available: value.available === true,
+    platform: value.platform,
+    sdkDll: value.sdkDll
+  };
+  if (typeof value.clientVersion === 'string') meta.clientVersion = value.clientVersion;
+  if (typeof value.databaseLoaded === 'boolean') meta.databaseLoaded = value.databaseLoaded;
+  if (Number.isFinite(value.indexedItems)) meta.indexedItems = value.indexedItems;
+  if (typeof value.error === 'string') meta.error = value.error;
+  if (typeof value.hint === 'string') meta.hint = value.hint;
+  return meta;
+}
+
 function buildSearchTool(options) {
   const { bridge, config } = options;
   const sortNames = Object.keys(SORTS);
@@ -311,7 +377,8 @@ function buildSearchTool(options) {
         },
         required: ['query', 'total', 'returned', 'truncated', 'results']
       },
-      render: renderSearch
+      render: renderSearch,
+      presentationMeta: searchCardMeta
     },
     presentCall(args) {
       const requested = args.query;
@@ -380,7 +447,8 @@ function buildStatusTool(options) {
         },
         required: ['available', 'platform', 'sdkDll']
       },
-      render: renderStatus
+      render: renderStatus,
+      presentationMeta: statusCardMeta
     },
     presentCall() {
       return { card: 'generic', title: 'Check Everything status', kind: 'other' };

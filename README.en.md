@@ -45,13 +45,13 @@ usually in a few milliseconds.
 ## Install
 
 **TL;DR: in DSH Desktop open Plugins → install task and enter `dsh-plugin-everything`.**
-The installer pulls the latest version from the npm registry (currently `1.0.3`); the
+The installer pulls the latest version from the npm registry (currently `1.1.0`); the
 `everything_search` / `everything_status` tools appear immediately, no Harness restart needed.
 
 ### Option 1: npm package (recommended)
 
 DSH Desktop: Plugins → install task → enter `dsh-plugin-everything`
-(use `dsh-plugin-everything@1.0.3` to pin a version).
+(use `dsh-plugin-everything@1.1.0` to pin a version).
 
 DSH CLI (desktop profile must be initialized and Desktop fully quit first):
 
@@ -66,10 +66,10 @@ Update to the latest version by running the same `add` again.
 
 ### Option 2: GitHub release tarball / local `.tgz` (offline, pinned version)
 
-1. Download `dsh-plugin-everything-1.0.3.tgz` from
+1. Download `dsh-plugin-everything-1.1.0.tgz` from
    [Releases](https://github.com/keyblues/dsh-plugin-everything/releases).
 2. Enter that tarball's absolute path in the Desktop installer
-   (e.g. `C:\Downloads\dsh-plugin-everything-1.0.3.tgz`), or ask the agent to run
+   (e.g. `C:\Downloads\dsh-plugin-everything-1.1.0.tgz`), or ask the agent to run
    `plugin_manager install_bundle target=<tgz path>`.
 
 Useful when npm is unavailable or a fixed version must be installed offline.
@@ -88,8 +88,8 @@ Enter the directory's absolute path in the Desktop installer, or ask the agent t
 | Input | Notes |
 | --- | --- |
 | `dsh-plugin-everything` | **npm package name (recommended)**: installs the latest version from the npm registry |
-| `dsh-plugin-everything@1.0.3` | npm package name with a pinned version |
-| `C:\Downloads\dsh-plugin-everything-1.0.3.tgz` | local release tarball / `.tgz` path |
+| `dsh-plugin-everything@1.1.0` | npm package name with a pinned version |
+| `C:\Downloads\dsh-plugin-everything-1.1.0.tgz` | local release tarball / `.tgz` path |
 | `C:\path\to\everything-plugin` | local directory (a clone of this repository) |
 | `https://github.com/keyblues/dsh-plugin-everything` | GitHub repository address; pnpm still has to reach github.com, so a restricted network fails with `ECONNRESET` — use the “use mainland China mirror” action or one of the inputs above |
 
@@ -129,6 +129,29 @@ size:>10mb dm:today                  # larger than 10 MB, modified today
 ```
 
 See [Everything search syntax](https://www.voidtools.com/support/everything/searching/).
+
+## Tool cards (Web UI)
+
+The package ships a Client half, `client.js`, which registers two cards into the Web client's
+`tool.call.toolview` slot. `everything_search` and `everything_status` therefore render as dedicated
+cards instead of the generic tool row:
+
+| Card | Collapsed row | Expanded body |
+| --- | --- | --- |
+| **Everything search** | search glyph, title, query, `returned/matched` counter | query chip, match totals with a truncation marker, a scrollable hit list (file/folder glyph, name, containing directory, size and modified time); clicking a hit opens the file in the sidebar |
+| **Everything status** | availability, client version | diagnostic grid (state, client version, indexed items, index loading state, platform, SDK DLL path); when unavailable, the recorded error and the `autoStart` hint |
+
+- **Data source:** the Host tool's `output.presentationMeta` projection, persisted with the result.
+  The card never re-parses the model-facing result text, so paths containing `(` or `,` cannot be
+  misread. The projection carries at most 100 rows to keep the session log small; the full result
+  text the model sees is unchanged.
+- **Theme:** only `--dsw-alias-*` theme tokens, so light and dark need no separate artwork; row height
+  and type scale follow the interface content-font setting.
+- **Copy:** Chinese and English through the Client locale dictionary, switching with the UI language.
+- **Fallback:** each card renders inside a crash boundary, so a rendering error degrades to one plain
+  text row instead of a blank entry.
+- **Taking effect:** Host tool changes apply on the next Host load; a new or updated Client half needs
+  one Harness restart (or a Web page reload) before the browser loads the new bundle.
 
 ## Configuration
 
@@ -194,7 +217,7 @@ DSH enforces the declaration in two places (built into app-boot / plugin-manager
 To run anyway, grant an exact-version exemption (this does not widen the declared range):
 
 ```powershell
-dsh plugin --profile desktop allow-version dsh-plugin-everything@1.0.3 --dsh-version <runtime version> --accept-risk
+dsh plugin --profile desktop allow-version dsh-plugin-everything@1.1.0 --dsh-version <runtime version> --accept-risk
 ```
 
 or use `set_version_exemption` in the plugin manager after the user accepts the risk. After a DSH
@@ -209,6 +232,27 @@ upgrade, check for a compatible plugin release before restarting or reinstalling
   `!$Recycle.Bin` when needed.
 
 ## Verification
+
+### v1.1.0 (tool cards)
+
+- **Static checks:** `node --check client.js` passes, `package.json` parses, and the `dsh.client`
+  declaration (`platform: "web"`, `immediately`, `inject: ["@deepseek-ai/dsh-client-ui-tool"]`) plus
+  `exports["./client"]` match what `dsh-client-modules` parses at Host boot.
+- **Smoke tests** (`npm test`): the Host side exercises the `presentationMeta` projection (fields,
+  100-row cap, malformed-row filtering, available/unavailable/failed status, model-facing output
+  unchanged); the Client side executes the bundle headlessly, checks both registered keys, the
+  stylesheet and zh/en dictionary parity, then renders collapsed/expanded, query, counters,
+  truncation, empty, failed, not-running, fallback and crash-boundary states.
+- **Runtime:** the Host caches each package's `dsh.client` verdict (`pkgMeta`) until restart, so a
+  new Client half needs one DSH Desktop restart. Afterwards run `node scripts/verify-live.mjs`
+  (reads `$env:DSH_WEB_URL`) to prove V1 a `dsh-plugin-everything` row in the plugin graph and
+  V2 that its bundle URL serves the `window.__ModuleLoader__` registration.
+- **Visual check:** no browser control is available here, so the cards' look still needs a human
+  pass in the GUI; row height (`24px + content-font delta`), type scale
+  (`--dsh-content-font-size-secondary`), the 2px separator dot and all colours follow the
+  first-party ToolRow and `--dsw-alias-*` tokens, so light/dark switch automatically.
+
+### v1.0.3
 
 - `install_bundle` reported `application: applied`, `enabled: true`, no warnings.
 - Live queries: `notepad.exe` (18 matches), Unicode file names, `path:`/`file:`/`folder:`/`ext:`
