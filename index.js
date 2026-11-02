@@ -268,6 +268,7 @@ function renderStatus(args, value) {
  * card disclose the cap honestly.
  */
 function searchCardMeta(args, value) {
+  const options = args !== null && typeof args === 'object' && !Array.isArray(args) ? args : {};
   const all = Array.isArray(value.results) ? value.results : [];
   const results = [];
   for (const item of all) {
@@ -290,11 +291,11 @@ function searchCardMeta(args, value) {
   return {
     version: CARD_META_VERSION,
     query: typeof value.query === 'string' ? value.query : '',
-    total: value.total,
-    returned: value.returned,
+    total: Number.isFinite(value.total) ? value.total : results.length,
+    returned: Number.isFinite(value.returned) ? value.returned : results.length,
     truncated: value.truncated === true,
-    sort: typeof args.sort === 'string' ? args.sort : 'name',
-    descending: args.descending === true,
+    sort: typeof options.sort === 'string' ? options.sort : 'name',
+    descending: options.descending === true,
     shown: results.length,
     results
   };
@@ -305,8 +306,8 @@ function statusCardMeta(_args, value) {
   const meta = {
     version: CARD_META_VERSION,
     available: value.available === true,
-    platform: value.platform,
-    sdkDll: value.sdkDll
+    platform: typeof value.platform === 'string' ? value.platform : PLATFORM,
+    sdkDll: typeof value.sdkDll === 'string' ? value.sdkDll : ''
   };
   if (typeof value.clientVersion === 'string') meta.clientVersion = value.clientVersion;
   if (typeof value.databaseLoaded === 'boolean') meta.databaseLoaded = value.databaseLoaded;

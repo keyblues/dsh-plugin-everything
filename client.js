@@ -144,6 +144,8 @@ window.__ModuleLoader__.load({
     const CARD_ROW_LIMIT = 100;
     /** Hit lines the expanded card draws before folding, matching the shipped 8-line card blocks. */
     const CARD_ROW_DISPLAY = 8;
+    /** Unprojected fallback text longer than this is folded so an old log cannot balloon the card. */
+    const RECORDED_TEXT_LIMIT = 2400;
     /** Recorded failure text that means "the Everything client is not running", not a plugin bug. */
     const NOT_RUNNING_PATTERN = /not running|未运行|\bIPC\b/i;
     /** The one line that actually turns auto-start on. */
@@ -381,13 +383,12 @@ window.__ModuleLoader__.load({
 .dpe-summary{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--dsh-content-font-size-secondary,13px);line-height:calc(24px + var(--dsh-content-font-delta,0px));color:inherit}
 .dpe-summary[data-tone="error"]{color:var(--dsw-alias-state-error-primary)}
 .dpe-root[data-state="error"] .dpe-leading,.dpe-root[data-state="stopped"] .dpe-leading{color:var(--dsw-alias-state-error-primary)}
-.dpe-suffix{flex:none;margin-left:8px;font-size:var(--dsh-content-font-size-secondary,13px);line-height:calc(24px + var(--dsh-content-font-delta,0px));color:inherit;font-variant-numeric:tabular-nums;white-space:nowrap}
+.dpe-suffix{flex:0 1 auto;min-width:0;margin-left:8px;overflow:hidden;text-overflow:ellipsis;font-size:var(--dsh-content-font-size-secondary,13px);line-height:calc(24px + var(--dsh-content-font-delta,0px));color:inherit;font-variant-numeric:tabular-nums;white-space:nowrap}
 .dpe-io{box-sizing:border-box;display:flex;flex-direction:column;gap:1px;margin:4px 0 4px 4px;padding:8px 12px;border:.5px solid var(--dsw-alias-border-l1);border-radius:var(--dsw-radius-lg,10px);background:var(--dsw-alias-markdown-code-block,var(--dsw-alias-bg-layer-2));font-family:var(--dsh-font-family-code,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace);font-size:calc(var(--dsh-content-font-size-secondary,13px) - 2px);line-height:18px;color:var(--dsw-alias-label-secondary)}
 .dpe-body{display:flex;flex-direction:column;min-width:0}
-.dpe-io:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid var(--dsw-focus-ring-color,var(--dsw-alias-brand-primary));outline-offset:-2px}
 .dpe-line{margin:0;padding:0;white-space:pre-wrap;overflow-wrap:anywhere;color:inherit;border:none;background:none;font:inherit;text-align:left}
 .dpe-line[data-tone="error"]{color:var(--dsw-alias-state-error-primary)}
-.dpe-hit{display:flex;align-items:baseline;gap:8px;min-width:0;padding:0;border:none;background:none;font:inherit;text-align:left;color:inherit;white-space:nowrap}
+.dpe-hit{display:flex;align-items:baseline;gap:8px;min-width:0;padding:0;overflow:hidden;border:none;background:none;font:inherit;text-align:left;color:inherit;white-space:nowrap}
 .dpe-hit-icon{flex:none;display:inline-flex;align-self:center;color:inherit}
 .dpe-hit-name{flex:none;max-width:45%;overflow:hidden;text-overflow:ellipsis;color:var(--dsw-alias-label-primary)}
 button.dpe-hit-name{padding:0;border:none;background:none;font:inherit;cursor:pointer;text-align:left}
@@ -466,8 +467,10 @@ button.dpe-hit-name:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid 
       }
       if (open) rowProps['data-open'] = 'true';
       // Same shape as the first-party ToolRow: `[glyph][title] · [summary] [suffix]`
-      // - one 2px dot with 8px margins before the summary, and the suffix simply
-      // follows it (no second separator, no right alignment).
+      // - one 2px dot with 8px margins before the first detail run, and the
+      // suffix simply follows it (no second separator, no right alignment).
+      const hasSummary = summary !== '';
+      const hasSuffix = suffix !== undefined && suffix !== null && suffix !== '';
       return h(
         'div',
         { className: 'dpe-root', 'data-tool': toolName, 'data-state': state },
@@ -481,9 +484,9 @@ button.dpe-hit-name:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid 
             expandable && h('span', { className: 'dpe-chevron' }, h(ChevronGlyph))
           ),
           h('span', { className: 'dpe-title' }, title),
-          summary !== '' && h('span', { className: 'dpe-sep', 'aria-hidden': true }),
-          summary !== '' && h('span', { className: 'dpe-summary', 'data-tone': summaryTone, title: summary }, summary),
-          suffix !== undefined && suffix !== null && suffix !== '' && h('span', { className: 'dpe-suffix' }, suffix)
+          (hasSummary || hasSuffix) && h('span', { className: 'dpe-sep', 'aria-hidden': true }),
+          hasSummary && h('span', { className: 'dpe-summary', 'data-tone': summaryTone, title: summary }, summary),
+          hasSuffix && h('span', { className: 'dpe-suffix' }, suffix)
         ),
         open &&
           h(
@@ -521,7 +524,9 @@ button.dpe-hit-name:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid 
     /** Recorded result text for results this half cannot project (old logs, foreign writers). */
     function RecordedBody(props) {
       if (props.text === '') return null;
-      return [h(Line, { key: 'label' }, props.title), h(Line, { key: 'text' }, props.text)];
+      const text =
+        props.text.length > RECORDED_TEXT_LIMIT ? `${props.text.slice(0, RECORDED_TEXT_LIMIT)}\n…` : props.text;
+      return [h(Line, { key: 'label' }, props.title), h(Line, { key: 'text' }, text)];
     }
     //#endregion
 
@@ -675,7 +680,7 @@ button.dpe-hit-name:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid 
             : model.returned === 1
               ? t('search.resultsAriaOne')
               : t('search.resultsAria', {
-                  returned: formatCount(model.rows.length, localeTag),
+                  returned: formatCount(Math.min(model.rows.length, CARD_ROW_DISPLAY), localeTag),
                   total: formatCount(model.returned, localeTag)
                 });
 
@@ -778,9 +783,10 @@ button.dpe-hit-name:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid 
       let body = null;
       if (phase === 'result') {
         if (state === 'error' || state === 'stopped') {
+          const message = recorded.replace(/^Error:\s*/i, '').trim();
           body = [
             h(Line, { key: 'state', tone: 'error' }, t('status.state.failed')),
-            h(Line, { key: 'message', tone: 'error' }, recorded.replace(/^Error:\s*/i, '').trim()),
+            message !== '' ? h(Line, { key: 'message', tone: 'error' }, message) : null,
             h(Line, { key: 'hint' }, `${t('hint.title')}: ${t('status.hintGeneric')}`)
           ].filter(Boolean);
         } else if (model !== null) {

@@ -128,6 +128,28 @@ assert.equal(downMeta.clientVersion, undefined);
 assert.equal(downMeta.indexedItems, undefined);
 //#endregion
 
+//#region a projector must never fail a successful tool call
+const partialSearchValue = { query: 'q', total: 1, returned: 1, truncated: false, results: [] };
+for (const [label, args] of [
+  ['undefined arguments', undefined],
+  ['null arguments', null],
+  ['array arguments', []],
+  ['string arguments', 'query']
+]) {
+  const projected = search.output.presentationMeta(args, partialSearchValue);
+  lossless(projected);
+  assert.equal(projected.sort, 'name', `search meta with ${label} must fall back to the default sort`);
+  assert.equal(projected.descending, false);
+  assert.equal(projected.total, 1);
+}
+
+const partialStatus = status.output.presentationMeta({}, { available: true });
+lossless(partialStatus);
+assert.equal(typeof partialStatus.platform, 'string');
+assert.ok(partialStatus.platform.length > 0, 'platform falls back to the runtime platform');
+assert.equal(partialStatus.sdkDll, '');
+//#endregion
+
 //#region model-facing text is unchanged by the bridge
 const rendered = search.output.render({ query: 'report 2024' }, {
   query: 'report 2024',
@@ -149,5 +171,6 @@ console.log('ok   host half mounts and registers both tools');
 console.log('ok   presentationMeta projects lossless, capped search metadata');
 console.log('ok   presentationMeta tolerates malformed or partial rows');
 console.log('ok   presentationMeta projects status diagnostics with and without errors');
+console.log('ok   presentationMeta tolerates missing or non-object arguments');
 console.log('ok   model-facing render output is unchanged');
 console.log('\nPASS: host presentation bridge');

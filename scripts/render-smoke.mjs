@@ -172,6 +172,27 @@ const collect = (node, out = []) => {
 };
 const textOf = (node) => collect(node).join(' ');
 
+/** Collect rendered host elements whose className contains the given token. */
+const nodesByClass = (node, className, out = []) => {
+  if (node === null || node === undefined || node === false) return out;
+  if (Array.isArray(node)) {
+    for (const child of node) nodesByClass(child, className, out);
+    return out;
+  }
+  if (typeof node !== 'object') return out;
+  const { render, props = {}, children = [] } = node;
+  if (typeof render === 'function') {
+    if (typeof render.prototype?.render === 'function' && render.prototype instanceof FakeComponent) {
+      const instance = new render(props);
+      return nodesByClass(instance.render(), className, out);
+    }
+    return nodesByClass(render(props), className, out);
+  }
+  if (typeof props.className === 'string' && props.className.split(' ').includes(className)) out.push(node);
+  for (const child of children) nodesByClass(child, className, out);
+  return out;
+};
+
 const disclosure = (open) => () => ({ expanded: open, toggle: () => {} });
 const argsView = (values) => ({
   text: (key) => (typeof values[key] === 'string' ? values[key] : undefined),
@@ -410,6 +431,57 @@ const statusFallbackBlock = {
 const statusFallback = textOf(status(propsFor('everything_status', statusFallbackBlock, 'result', true)));
 check('status card falls back to the recorded text', statusFallback.includes('Everything 1.4.1.1032 is available'), statusFallback.slice(0, 300));
 check('status fallback puts the recorded line in the row', !statusFallback.includes('状态检查失败'), statusFallback.slice(0, 200));
+
+// Regression: an empty query still needs the separator before the counter.
+const blankQueryBlock = {
+  callId: 'call_blank',
+  kind: 'result',
+  content: [{ type: 'text', text: 'Showing 2 of 1234 matches.' }],
+  isError: false,
+  meta: {
+    version: 1,
+    query: '',
+    total: 1234,
+    returned: 2,
+    truncated: false,
+    sort: 'name',
+    descending: false,
+    shown: 2,
+    results: [
+      { path: 'C:\\data\\a.md', name: 'a.md', folder: false, size: 10, modified: '2026-01-02T03:04:05.000Z' },
+      { path: 'C:\\data\\b.md', name: 'b.md', folder: false, size: 20, modified: '2026-01-02T03:04:05.000Z' }
+    ]
+  },
+  args: argsView({ query: '' }),
+  subCalls: []
+};
+const blankRow = search(propsFor('everything_search', blankQueryBlock, 'result', false));
+check('row separates the counter even with an empty query', nodesByClass(blankRow, 'dpe-sep').length === 1, String(nodesByClass(blankRow, 'dpe-sep').length));
+check('row still shows the counter for an empty query', textOf(blankRow).includes('2/1,234'), textOf(blankRow));
+
+// Regression: an unprojected recorded blob is folded instead of ballooning the card.
+const longRecordedBlock = {
+  callId: 'call_long',
+  kind: 'result',
+  content: [{ type: 'text', text: 'x'.repeat(3000) }],
+  isError: false,
+  args: argsView({ query: 'x' }),
+  subCalls: []
+};
+const longBody = textOf(search(propsFor('everything_search', longRecordedBlock, 'result', true)));
+check('folded fallback text keeps the card small', longBody.includes('…') && longBody.length < 2600, String(longBody.length));
+
+// Regression: a failed status call without recorded text renders no empty line.
+const emptyStatusErrorBlock = {
+  callId: 'call_status_empty_err',
+  kind: 'result',
+  content: [],
+  isError: true,
+  args: argsView({}),
+  subCalls: []
+};
+const emptyStatusLines = nodesByClass(status(propsFor('everything_status', emptyStatusErrorBlock, 'result', true)), 'dpe-line');
+check('failed status card omits an empty message line', emptyStatusLines.length === 2, String(emptyStatusLines.length));
 
 const boundaryElement = search(propsFor('everything_search', searchBlock, 'result', false));
 check('each card render is wrapped in a crash boundary', boundaryElement.render?.name === 'CardBoundary', boundaryElement.render?.name);
