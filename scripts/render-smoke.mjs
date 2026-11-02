@@ -280,7 +280,7 @@ const collapsedSearch = search(propsFor('everything_search', searchBlock, 'resul
 const collapsedText = textOf(collapsedSearch);
 check('search collapsed row names the tool', collapsedText.includes('Everything 搜索'), collapsedText.slice(0, 160));
 check('search collapsed row shows the query', collapsedText.includes('report 2024'));
-check('search collapsed row shows the returned/total counter', collapsedText.includes('2 / 1,234'), collapsedText.slice(0, 200));
+check('search collapsed row shows the returned/total counter', collapsedText.includes('2/1,234'), collapsedText.slice(0, 200));
 check('search collapsed row hides the result list', !collapsedText.includes('annual report 2024.pdf'));
 
 const expandedSearch = search(propsFor('everything_search', searchBlock, 'result', true));

@@ -648,7 +648,7 @@ button.dpe-hit-name:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid 
         summaryTone = 'error';
       } else if (model !== null) {
         if (model.returned === 0) suffix = t('search.noMatches');
-        else suffix = `${formatCount(model.returned, localeTag)} / ${formatCount(model.total, localeTag)}`;
+        else suffix = `${formatCount(model.returned, localeTag)}/${formatCount(model.total, localeTag)}`;
       }
 
       let body = null;
