@@ -78,6 +78,8 @@ window.__ModuleLoader__.load({
         'status.value.unknown': 'Unknown',
         'status.itemsValue': '{n} items',
         'status.itemValue': '{n} item',
+        'status.inlineVersion': 'version {version}',
+        'status.inlineItems': '{n} items indexed',
         'status.indexLoadingWord': 'index loading',
         'status.detailsAria': 'Everything status details',
         'status.hintGeneric': "Check the Everything client and the plugin's sdkPath, then retry.",
@@ -134,6 +136,8 @@ window.__ModuleLoader__.load({
         'status.value.unknown': '未知',
         'status.itemsValue': '{n} 项',
         'status.itemValue': '{n} 项',
+        'status.inlineVersion': '版本 {version}',
+        'status.inlineItems': '索引 {n} 项',
         'status.indexLoadingWord': '索引加载中',
         'status.detailsAria': 'Everything 状态详情',
         'status.hintGeneric': '检查本机 Everything 客户端与插件的 sdkPath，然后重试。',
@@ -764,13 +768,9 @@ button.dpe-hit-name:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid 
       } else if (model.available) {
         summary = t('status.state.available');
         const details = [];
-        if (model.clientVersion !== undefined) details.push(`v${model.clientVersion}`);
+        if (model.clientVersion !== undefined) details.push(t('status.inlineVersion', { version: model.clientVersion }));
         if (model.indexedItems !== undefined) {
-          details.push(
-            t(model.indexedItems === 1 ? 'status.itemValue' : 'status.itemsValue', {
-              n: formatCount(model.indexedItems, localeTag)
-            })
-          );
+          details.push(t('status.inlineItems', { n: formatCount(model.indexedItems, localeTag) }));
         }
         if (model.databaseLoaded === false) details.push(t('status.indexLoadingWord'));
         suffix = details.length === 0 ? null : details.join(', ');

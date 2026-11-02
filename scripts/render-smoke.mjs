@@ -298,8 +298,8 @@ check('search card shows the match totals', expandedText.includes('1,234 项匹�
 const statusCollapsed = textOf(status(propsFor('everything_status', statusBlock, 'result', false)));
 check('status row names the tool', statusCollapsed.includes('Everything 状态'), statusCollapsed.slice(0, 160));
 check('status row names the availability state', statusCollapsed.includes('可用'));
-check('status row carries the client version', statusCollapsed.includes('v1.4.1.1032'));
-check('status row carries the indexed item count', statusCollapsed.includes('2,784,085 项'), statusCollapsed.slice(0, 200));
+check('status row labels the client version', statusCollapsed.includes('版本 1.4.1.1032'), statusCollapsed.slice(0, 200));
+check('status row labels the indexed item count', statusCollapsed.includes('索引 2,784,085 项'), statusCollapsed.slice(0, 200));
 
 const statusExpanded = textOf(status(propsFor('everything_status', statusBlock, 'result', true)));
 check('status card lists the index state', statusExpanded.includes('索引状态') && statusExpanded.includes('就绪'));
