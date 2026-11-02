@@ -377,25 +377,25 @@ window.__ModuleLoader__.load({
 .dpe-row[data-expandable]:hover .dpe-chevron,.dpe-row[data-open] .dpe-chevron{opacity:1}
 .dpe-row[data-open] .dpe-chevron{transform:rotate(90deg)}
 .dpe-title{flex:none;font-size:var(--dsh-content-font-size-secondary,13px);line-height:calc(24px + var(--dsh-content-font-delta,0px));color:inherit;white-space:nowrap}
-.dpe-sep{flex:none;width:2px;height:2px;margin:0 6px;border-radius:1px;background:var(--dsw-alias-label-caption,var(--dsw-alias-label-tertiary))}
-.dpe-part{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--dsh-content-font-size-secondary,13px);line-height:calc(24px + var(--dsh-content-font-delta,0px));color:inherit}
-.dpe-part-fixed{flex:none}
-.dpe-part[data-tone="error"]{color:var(--dsw-alias-state-error-primary)}
+.dpe-sep{flex:none;width:2px;height:2px;margin:0 8px;border-radius:1px;background:var(--dsw-alias-label-caption,var(--dsw-alias-label-tertiary))}
+.dpe-summary{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--dsh-content-font-size-secondary,13px);line-height:calc(24px + var(--dsh-content-font-delta,0px));color:inherit}
+.dpe-summary[data-tone="error"]{color:var(--dsw-alias-state-error-primary)}
 .dpe-root[data-state="error"] .dpe-leading,.dpe-root[data-state="stopped"] .dpe-leading{color:var(--dsw-alias-state-error-primary)}
-.dpe-body{margin:2px 0 4px 4px;padding:0;border:none;background:none;font-family:var(--dsh-font-family-code,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace);font-size:calc(var(--dsh-content-font-size-secondary,13px) - 2px);line-height:18px;color:var(--dsw-alias-label-tertiary)}
-.dpe-line{margin:0;padding:0;white-space:pre-wrap;overflow-wrap:anywhere;color:inherit}
+.dpe-suffix{flex:none;margin-left:8px;font-size:var(--dsh-content-font-size-secondary,13px);line-height:calc(24px + var(--dsh-content-font-delta,0px));color:inherit;font-variant-numeric:tabular-nums;white-space:nowrap}
+.dpe-io{box-sizing:border-box;display:flex;flex-direction:column;gap:1px;margin:4px 0 4px 4px;padding:8px 12px;border:.5px solid var(--dsw-alias-border-l1);border-radius:var(--dsw-radius-lg,10px);background:var(--dsw-alias-markdown-code-block,var(--dsw-alias-bg-layer-2));font-family:var(--dsh-font-family-code,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace);font-size:calc(var(--dsh-content-font-size-secondary,13px) - 2px);line-height:18px;color:var(--dsw-alias-label-secondary);max-height:260px;overflow-y:auto;overscroll-behavior:contain}
+.dpe-body{display:flex;flex-direction:column;min-width:0}
+.dpe-io:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid var(--dsw-focus-ring-color,var(--dsw-alias-brand-primary));outline-offset:-2px}
+.dpe-line{margin:0;padding:0;white-space:pre-wrap;overflow-wrap:anywhere;color:inherit;border:none;background:none;font:inherit;text-align:left}
+.dpe-line[data-tone="error"]{color:var(--dsw-alias-state-error-primary)}
 .dpe-hit{display:flex;align-items:baseline;gap:8px;min-width:0;padding:0;border:none;background:none;font:inherit;text-align:left;color:inherit;white-space:nowrap}
 .dpe-hit-icon{flex:none;display:inline-flex;align-self:center;color:inherit}
-.dpe-hit-name{flex:none;max-width:45%;overflow:hidden;text-overflow:ellipsis;color:var(--dsw-alias-label-secondary)}
+.dpe-hit-name{flex:none;max-width:45%;overflow:hidden;text-overflow:ellipsis;color:var(--dsw-alias-label-primary)}
 button.dpe-hit-name{padding:0;border:none;background:none;font:inherit;cursor:pointer;text-align:left}
-button.dpe-hit-name:hover{color:var(--dsw-alias-label-primary);text-decoration:underline}
+button.dpe-hit-name:hover{text-decoration:underline}
 button.dpe-hit-name:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid var(--dsw-focus-ring-color,var(--dsw-alias-brand-primary));outline-offset:-1px;border-radius:2px}
 .dpe-hit-path{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;color:inherit}
 .dpe-hit-meta{flex:none;color:inherit;font-variant-numeric:tabular-nums}
-.dpe-hit-list{margin:0;padding:0;list-style:none}
-.dpe-scroll{max-height:280px;overflow-y:auto;overscroll-behavior:contain}
-.dpe-scroll:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid var(--dsw-focus-ring-color,var(--dsw-alias-brand-primary));outline-offset:-2px}
-.dpe-error{color:var(--dsw-alias-state-error-primary)}
+.dpe-hit-list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:1px}
 .dpe-inspect{align-self:flex-start;margin:2px 0 0;padding:0;border:none;background:none;color:var(--dsw-alias-label-tertiary);font:inherit;font-size:11px;line-height:16px;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
 .dpe-inspect:hover{color:var(--dsw-alias-label-secondary)}
 @media (prefers-reduced-motion: reduce){.dpe-chevron,.dpe-glyph{transition:none}}
@@ -445,7 +445,7 @@ button.dpe-hit-name:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid 
      * first-party ToolRow, so its text stays selectable; Enter/Space toggles it.
      */
     function CardShell(props) {
-      const { toolName, title, glyph, parts, firstTone, state, expandable } = props;
+      const { toolName, title, glyph, summary, summaryTone, suffix, state, expandable } = props;
       const { disclosure, body, inspect, t, callId, bodyLabel } = props;
       const bodyId = callId === undefined ? undefined : `dpe-body-${callId}`;
       const open = expandable && disclosure.expanded;
@@ -465,26 +465,9 @@ button.dpe-hit-name:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid 
         rowProps.onKeyDown = onKeyDown;
       }
       if (open) rowProps['data-open'] = 'true';
-      // Every non-empty piece after the title is separated the same way: one
-      // 2px dot with the same margins, so the row reads as a single dim line
-      // instead of a title/body plus a detached suffix.
-      const pieces = [];
-      (Array.isArray(parts) ? parts : []).forEach((part, index) => {
-        if (typeof part !== 'string' || part === '') return;
-        pieces.push(h('span', { key: `sep:${index}`, className: 'dpe-sep', 'aria-hidden': true }));
-        pieces.push(
-          h(
-            'span',
-            {
-              key: `part:${index}`,
-              className: index === 0 ? 'dpe-part' : 'dpe-part dpe-part-fixed',
-              'data-tone': firstTone,
-              title: part
-            },
-            part
-          )
-        );
-      });
+      // Same shape as the first-party ToolRow: `[glyph][title] · [summary] [suffix]`
+      // - one 2px dot with 8px margins before the summary, and the suffix simply
+      // follows it (no second separator, no right alignment).
       return h(
         'div',
         { className: 'dpe-root', 'data-tool': toolName, 'data-state': state },
@@ -498,18 +481,25 @@ button.dpe-hit-name:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid 
             expandable && h('span', { className: 'dpe-chevron' }, h(ChevronGlyph))
           ),
           h('span', { className: 'dpe-title' }, title),
-          ...pieces
+          summary !== '' && h('span', { className: 'dpe-sep', 'aria-hidden': true }),
+          summary !== '' && h('span', { className: 'dpe-summary', 'data-tone': summaryTone, title: summary }, summary),
+          suffix !== undefined && suffix !== null && suffix !== '' && h('span', { className: 'dpe-suffix' }, suffix)
         ),
         open &&
           h(
             'div',
-            {
-              className: 'dpe-body',
-              id: bodyId,
-              role: bodyLabel === undefined ? undefined : 'group',
-              'aria-label': bodyLabel
-            },
-            body,
+            { className: 'dpe-body' },
+            h(
+              'div',
+              {
+                className: 'dpe-io',
+                id: bodyId,
+                role: bodyLabel === undefined ? undefined : 'group',
+                'aria-label': bodyLabel,
+                tabIndex: 0
+              },
+              body
+            ),
             typeof inspect === 'function' && h('button', { type: 'button', className: 'dpe-inspect', onClick: inspect }, t('inspect'))
           )
       );
@@ -524,9 +514,9 @@ button.dpe-hit-name:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid 
       return { expanded, toggle };
     }
 
-    /** One plain text line in the body. */
+    /** One plain text line of the output block. */
     function Line(props) {
-      return h('div', { className: props.tone === 'error' ? 'dpe-line dpe-error' : 'dpe-line' }, props.children);
+      return h('div', { className: 'dpe-line', 'data-tone': props.tone }, props.children);
     }
 
     /** Recorded result text for results this half cannot project (old logs, foreign writers). */
@@ -613,27 +603,9 @@ button.dpe-hit-name:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid 
         h(Line, { key: 'meta' }, parts.join(' · ')),
         model.rows.length > 0
           ? h(
-              'div',
-              {
-                key: 'list',
-                className: 'dpe-scroll',
-                role: 'region',
-                tabIndex: 0,
-                'aria-label':
-                  model.returned === 0
-                    ? t('search.resultsAriaEmpty')
-                    : model.returned === 1
-                      ? t('search.resultsAriaOne')
-                      : t('search.resultsAria', {
-                          returned: formatCount(model.rows.length, localeTag),
-                          total: formatCount(model.returned, localeTag)
-                        })
-              },
-              h(
-                'ul',
-                { className: 'dpe-hit-list' },
-                model.rows.map((row, index) => h(SearchHit, { key: `${index}:${row.path}`, row, openFile, localeTag, t }))
-              )
+              'ul',
+              { key: 'list', className: 'dpe-hit-list' },
+              model.rows.map((row, index) => h(SearchHit, { key: `${index}:${row.path}`, row, openFile, localeTag, t }))
             )
           : null,
         model.rows.length === 0
@@ -663,23 +635,17 @@ button.dpe-hit-name:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid 
       const failedMessage = state === 'error' || state === 'stopped' ? recorded.replace(/^Error:\s*/i, '').trim() : '';
       const kind = state === 'ok' ? null : failureKind(failedMessage);
 
-      const pieces = [];
-      let tone;
+      let summary = query;
+      let summaryTone;
+      let suffix = null;
       if (running) {
-        pieces.push(query === '' ? t(state === 'preparing' ? 'state.preparing' : 'state.searching') : query);
+        summary = query === '' ? t(state === 'preparing' ? 'state.preparing' : 'state.searching') : query;
       } else if (state === 'error' || state === 'stopped') {
-        pieces.push(failedMessage === '' ? t('search.failedTitle') : firstLine(failedMessage));
-        tone = 'error';
-      } else {
-        pieces.push(query);
-        if (model !== null) {
-          if (model.returned === 0) {
-            pieces.push(t('search.noMatches'));
-          } else {
-            pieces.push(`${formatCount(model.returned, localeTag)} / ${formatCount(model.total, localeTag)}`);
-            if (model.truncated) pieces.push(t('search.truncatedWord'));
-          }
-        }
+        summary = failedMessage === '' ? t('search.failedTitle') : firstLine(failedMessage);
+        summaryTone = 'error';
+      } else if (model !== null) {
+        if (model.returned === 0) suffix = t('search.noMatches');
+        else suffix = `${formatCount(model.returned, localeTag)} / ${formatCount(model.total, localeTag)}`;
       }
 
       let body = null;
@@ -702,18 +668,31 @@ button.dpe-hit-name:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid 
         }
       }
       const expandable = phase === 'result' && (model !== null || recorded !== '' || typeof inspect === 'function');
+      const resultsLabel =
+        model === null
+          ? undefined
+          : model.returned === 0
+            ? t('search.resultsAriaEmpty')
+            : model.returned === 1
+              ? t('search.resultsAriaOne')
+              : t('search.resultsAria', {
+                  returned: formatCount(model.rows.length, localeTag),
+                  total: formatCount(model.returned, localeTag)
+                });
 
       return h(CardShell, {
         toolName: props.toolName,
         callId: props.callId,
         title: t('search.title'),
         glyph: h(SearchGlyph),
-        parts: pieces,
-        firstTone: tone,
+        summary,
+        summaryTone,
+        suffix,
         state,
         expandable,
         disclosure,
         body,
+        bodyLabel: resultsLabel,
         inspect,
         t
       });
@@ -773,39 +752,33 @@ button.dpe-hit-name:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid 
       const model = meta === null ? null : normalizeStatusMeta(meta);
       const recorded = phase === 'result' ? resultText(block) : '';
 
-      const pieces = [];
-      let tone;
-      let stateWord = t('status.state.unknown');
+      let summary = t('status.state.unknown');
+      let summaryTone;
+      let suffix = null;
       if (running) {
-        stateWord = t('state.checking');
+        summary = t('state.checking');
       } else if (state === 'error' || state === 'stopped') {
-        stateWord = t('status.state.failed');
-        tone = 'error';
+        summary = firstLine(recorded.replace(/^Error:\s*/i, '').trim()) || t('status.state.failed');
+        summaryTone = 'error';
       } else if (model === null) {
-        stateWord = t('status.state.unknown');
+        summary = firstLine(recorded) || t('status.state.unknown');
       } else if (model.available) {
-        stateWord = t('status.state.available');
-      } else {
-        const kind = model.error === undefined ? 'unavailable' : failureKind(model.error);
-        stateWord = kind === 'notRunning' ? t('status.state.notRunning') : t('status.state.unavailable');
-      }
-      pieces.push(stateWord);
-      if (state === 'error' || state === 'stopped') {
-        pieces.push(firstLine(recorded.replace(/^Error:\s*/i, '').trim()));
-      } else if (model === null) {
-        pieces.push(firstLine(recorded));
-      } else if (model.available) {
-        if (model.clientVersion !== undefined) pieces.push(`v${model.clientVersion}`);
+        summary = t('status.state.available');
+        const details = [];
+        if (model.clientVersion !== undefined) details.push(`v${model.clientVersion}`);
         if (model.indexedItems !== undefined) {
-          pieces.push(
+          details.push(
             t(model.indexedItems === 1 ? 'status.itemValue' : 'status.itemsValue', {
               n: formatCount(model.indexedItems, localeTag)
             })
           );
         }
-        if (model.databaseLoaded === false) pieces.push(t('status.indexLoadingWord'));
-      } else if (model.error !== undefined) {
-        pieces.push(firstLine(model.error));
+        if (model.databaseLoaded === false) details.push(t('status.indexLoadingWord'));
+        suffix = details.length === 0 ? null : details.join(', ');
+      } else {
+        const kind = model.error === undefined ? 'unavailable' : failureKind(model.error);
+        summary = kind === 'notRunning' ? t('status.state.notRunning') : t('status.state.unavailable');
+        suffix = model.error === undefined ? null : firstLine(model.error);
       }
 
       let body = null;
@@ -829,8 +802,9 @@ button.dpe-hit-name:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid 
         callId: props.callId,
         title: t('status.title'),
         glyph: h(StatusGlyph),
-        parts: pieces,
-        firstTone: tone,
+        summary,
+        summaryTone,
+        suffix,
         state,
         expandable,
         disclosure,
@@ -877,7 +851,7 @@ button.dpe-hit-name:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid 
             { className: 'dpe-row' },
             h('span', { className: 'dpe-title' }, title),
             detail !== '' && h('span', { className: 'dpe-sep', 'aria-hidden': true }),
-            detail !== '' && h('span', { className: 'dpe-part' }, detail)
+            detail !== '' && h('span', { className: 'dpe-summary' }, detail)
           )
         );
       }

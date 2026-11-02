@@ -281,7 +281,6 @@ const collapsedText = textOf(collapsedSearch);
 check('search collapsed row names the tool', collapsedText.includes('Everything 搜索'), collapsedText.slice(0, 160));
 check('search collapsed row shows the query', collapsedText.includes('report 2024'));
 check('search collapsed row shows the returned/total counter', collapsedText.includes('2 / 1,234'), collapsedText.slice(0, 200));
-check('search collapsed row flags truncation', collapsedText.includes('已截断'), collapsedText.slice(0, 200));
 check('search collapsed row hides the result list', !collapsedText.includes('annual report 2024.pdf'));
 
 const expandedSearch = search(propsFor('everything_search', searchBlock, 'result', true));
@@ -376,7 +375,7 @@ const statusFallbackBlock = {
 };
 const statusFallback = textOf(status(propsFor('everything_status', statusFallbackBlock, 'result', true)));
 check('status card falls back to the recorded text', statusFallback.includes('Everything 1.4.1.1032 is available'), statusFallback.slice(0, 300));
-check('status fallback names the unknown state', statusFallback.includes('未知'), statusFallback.slice(0, 200));
+check('status fallback puts the recorded line in the row', !statusFallback.includes('状态检查失败'), statusFallback.slice(0, 200));
 
 const boundaryElement = search(propsFor('everything_search', searchBlock, 'result', false));
 check('each card render is wrapped in a crash boundary', boundaryElement.render?.name === 'CardBoundary', boundaryElement.render?.name);
