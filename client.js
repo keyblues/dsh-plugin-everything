@@ -7,19 +7,14 @@
 // tool row. The Host tool's `output.presentationMeta` projection is the cards'
 // data source; the model-facing result text is never re-parsed here.
 //
-// Cards:
-//   everything_search - collapsed row (title · query · returned/matched · state
-//     chip) that opens into a query chip, a totals line, a scrollable hit list
-//     with file/folder rows, and an honest truncation footer.
-//   everything_status - collapsed row (availability dot · state word · version
-//     and index size) that opens into a status head, a definition grid and the
-//     diagnostics/hint panel when Everything is not usable.
+// The cards deliberately blend into the transcript: the collapsed row is the
+// shipped DisclosureRow shape (dim one-line text that brightens on hover, a 2px
+// dot separator, a leading glyph that swaps to a chevron) and the expanded body
+// is plain left-aligned text with no fill, border, pill or right-aligned column
+// - the same visual weight as a first-party tool's output block.
 //
-// Row chrome follows the shipped DisclosureRow/ToolRow (24px row plus the user
-// content-font delta, 16px leading box, 2px dot separator, dim text that
-// brightens on hover). Colours come only from the shipped --dsw-* theme tokens,
-// so light and dark themes need no separate artwork; the SVG glyphs use
-// currentColor.
+// Colours come only from the shipped --dsw-* theme tokens, so light and dark
+// themes need no separate artwork; the SVG glyphs use currentColor.
 
 window.__ModuleLoader__.load({
   id: 'dsh-plugin-everything',
@@ -36,15 +31,13 @@ window.__ModuleLoader__.load({
         'search.title': 'Everything search',
         'status.title': 'Everything status',
         'state.preparing': 'Preparing…',
-        'state.searching': 'Searching the Everything index…',
-        'state.checking': 'Checking Everything…',
-        'search.chipTruncated': 'truncated',
-        'search.chipFailed': 'failed',
-        'search.chipNotRunning': 'not running',
+        'state.searching': 'Searching…',
+        'state.checking': 'Checking…',
         'search.matches': '{total} matches',
         'search.matchOne': '1 match',
-        'search.showing': 'Showing {returned} of {total}',
+        'search.showing': 'showing {returned} of {total}',
         'search.noMatches': 'No matches',
+        'search.truncatedWord': 'truncated',
         'search.sortedBy': 'sorted by {sort} {order}',
         'search.order.ascending': 'ascending',
         'search.order.descending': 'descending',
@@ -57,7 +50,7 @@ window.__ModuleLoader__.load({
         'search.emptyTitle': 'No matching files or folders',
         'search.emptyHint': 'Try a broader term, a * wildcard, or drop filters such as ext:.',
         'search.folderWord': 'folder',
-        'search.showingRows': 'Showing the first {shown} of {returned} rows.',
+        'search.showingRows': 'Showing the first {shown} of {returned} returned rows.',
         'search.footerCapped': 'The card lists at most {cap} rows; the full result text above lists every match.',
         'search.footerTruncated': 'Results were truncated. Raise max (up to 500) or narrow the query to see more.',
         'search.notRunningTitle': "Everything isn't running",
@@ -75,6 +68,8 @@ window.__ModuleLoader__.load({
         'status.state.unavailable': 'Unavailable',
         'status.state.unknown': 'Unknown',
         'status.state.failed': 'Status check failed',
+        'status.field.state': 'State',
+        'status.field.version': 'Version',
         'status.field.indexStatus': 'Index status',
         'status.field.indexedItems': 'Indexed items',
         'status.field.platform': 'Platform',
@@ -84,9 +79,8 @@ window.__ModuleLoader__.load({
         'status.value.unknown': 'Unknown',
         'status.itemsValue': '{n} items',
         'status.itemValue': '{n} item',
+        'status.indexLoadingWord': 'index loading',
         'status.detailsAria': 'Everything status details',
-        'status.chipIndexLoading': 'index loading',
-        'status.diagnostics': 'Diagnostics',
         'status.hintGeneric': "Check the Everything client and the plugin's sdkPath, then retry.",
         'inspect': 'Inspect call',
       },
@@ -94,15 +88,13 @@ window.__ModuleLoader__.load({
         'search.title': 'Everything 搜索',
         'status.title': 'Everything 状态',
         'state.preparing': '准备中…',
-        'state.searching': '正在搜索 Everything 索引…',
-        'state.checking': '正在检查 Everything…',
-        'search.chipTruncated': '已截断',
-        'search.chipFailed': '失败',
-        'search.chipNotRunning': '未运行',
+        'state.searching': '搜索中…',
+        'state.checking': '检查中…',
         'search.matches': '{total} 项匹配',
         'search.matchOne': '1 项匹配',
-        'search.showing': '显示 {returned}/{total} 项',
+        'search.showing': '显示 {returned}/{total}',
         'search.noMatches': '无匹配',
+        'search.truncatedWord': '已截断',
         'search.sortedBy': '按{sort}{order}',
         'search.order.ascending': '升序',
         'search.order.descending': '降序',
@@ -133,6 +125,8 @@ window.__ModuleLoader__.load({
         'status.state.unavailable': '不可用',
         'status.state.unknown': '未知',
         'status.state.failed': '状态检查失败',
+        'status.field.state': '状态',
+        'status.field.version': '版本',
         'status.field.indexStatus': '索引状态',
         'status.field.indexedItems': '索引条目',
         'status.field.platform': '平台',
@@ -142,9 +136,8 @@ window.__ModuleLoader__.load({
         'status.value.unknown': '未知',
         'status.itemsValue': '{n} 项',
         'status.itemValue': '{n} 项',
+        'status.indexLoadingWord': '索引加载中',
         'status.detailsAria': 'Everything 状态详情',
-        'status.chipIndexLoading': '索引加载中',
-        'status.diagnostics': '诊断',
         'status.hintGeneric': '检查本机 Everything 客户端与插件的 sdkPath，然后重试。',
         'inspect': '检查调用',
       },
@@ -270,9 +263,13 @@ window.__ModuleLoader__.load({
       const ms = Date.parse(raw);
       if (!Number.isFinite(ms)) return '';
       try {
-        return new Intl.DateTimeFormat(localeTag, { year: 'numeric', month: 'short', day: 'numeric' }).format(
-          new Date(ms)
-        );
+        return new Intl.DateTimeFormat(localeTag, {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        }).format(new Date(ms));
       } catch {
         return '';
       }
@@ -285,7 +282,7 @@ window.__ModuleLoader__.load({
       return slash > 0 ? fullPath.slice(0, slash) : '';
     }
 
-    /** Keep a Windows parent path readable in one cell: first segment, ellipsis, last two. */
+    /** Keep a Windows parent path readable in one line: first segment, ellipsis, last two. */
     function compactParentPath(parent) {
       if (parent === '') return '';
       const unc = parent.startsWith('\\\\');
@@ -362,10 +359,10 @@ window.__ModuleLoader__.load({
     //#endregion
 
     //#region styles
-    // Row chrome mirrors the shipped DisclosureRow/ToolRow so a card sits in the
-    // transcript like a first-party row: 24px row (plus the user content-font
-    // delta), 16px leading box, 2px dot separator, dim tertiary text that
-    // brightens on hover. Only --dsw-* / --dsh-content-* tokens are referenced.
+    // Deliberately minimal: the row copies the shipped DisclosureRow/ToolRow
+    // (24px, dim text that brightens on hover, 2px dot, glyph-to-chevron swap)
+    // and the body is plain left-aligned text with no fill, border, pill or
+    // right-aligned column - it reads like a first-party tool's output block.
     const CSS = `
 .dpe-root{display:flex;flex-direction:column;min-width:0}
 .dpe-row{box-sizing:border-box;display:flex;align-items:center;width:100%;min-width:0;height:calc(24px + var(--dsh-content-font-delta,0px));padding:0;border:none;border-radius:var(--dsw-radius-sm,6px);background:transparent;color:var(--dsw-alias-label-tertiary);font:inherit;text-align:left;transition:color .1s ease}
@@ -381,73 +378,27 @@ window.__ModuleLoader__.load({
 .dpe-row[data-open] .dpe-chevron{transform:rotate(90deg)}
 .dpe-title{flex:none;font-size:var(--dsh-content-font-size-secondary,13px);line-height:calc(24px + var(--dsh-content-font-delta,0px));color:inherit;white-space:nowrap}
 .dpe-sep{flex:none;width:2px;height:2px;margin:0 8px;border-radius:1px;background:var(--dsw-alias-label-caption,var(--dsw-alias-label-tertiary))}
-.dpe-summary{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--dsh-content-font-size-secondary,13px);line-height:calc(24px + var(--dsh-content-font-delta,0px));color:inherit}
-.dpe-summary[data-query]{font-family:var(--dsh-font-family-code,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace);font-size:calc(var(--dsh-content-font-size-secondary,13px) - 1px)}
+.dpe-summary{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--dsh-content-font-size-secondary,13px);line-height:calc(24px + var(--dsh-content-font-delta,0px));color:inherit}
 .dpe-summary[data-tone="error"]{color:var(--dsw-alias-state-error-primary)}
 .dpe-root[data-state="error"] .dpe-leading,.dpe-root[data-state="stopped"] .dpe-leading{color:var(--dsw-alias-state-error-primary)}
-.dpe-summary[data-tone="warn"]{color:var(--dsw-alias-state-warn-label,var(--dsw-alias-state-warn-primary))}
-.dpe-spacer{flex:1 1 auto;min-width:8px}
 .dpe-suffix{flex:none;margin-left:8px;font-size:calc(var(--dsh-content-font-size-secondary,13px) - 1px);line-height:calc(24px + var(--dsh-content-font-delta,0px));color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums;white-space:nowrap}
-.dpe-chip{flex:none;display:inline-flex;align-items:center;gap:4px;margin-left:8px;box-sizing:border-box;height:18px;padding:0 7px;border:1px solid var(--dsw-alias-border-l1);border-radius:9px;font-size:11px;line-height:16px;color:var(--dsw-alias-label-secondary);white-space:nowrap}
-.dpe-chip-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--dsw-alias-label-tertiary)}
-.dpe-chip[data-tone="warn"]{border-color:var(--dsw-alias-state-warn-primary);color:var(--dsw-alias-state-warn-label,var(--dsw-alias-state-warn-primary))}
-.dpe-chip[data-tone="warn"] .dpe-chip-dot{background:var(--dsw-alias-state-warn-primary)}
-.dpe-chip[data-tone="error"]{border-color:var(--dsw-alias-state-error-primary);color:var(--dsw-alias-state-error-primary)}
-.dpe-chip[data-tone="error"] .dpe-chip-dot{background:var(--dsw-alias-state-error-primary)}
-.dpe-chip[data-tone="idle"] .dpe-chip-dot{background:var(--dsw-alias-state-idle-primary)}
-.dpe-body{margin:4px 0 4px 22px;box-sizing:border-box;border:1px solid var(--dsw-alias-border-l1);border-radius:var(--dsw-radius-lg,10px);background:var(--dsw-alias-bg-layer-1);font-size:calc(var(--dsh-content-font-size-secondary,13px) - 1px);line-height:18px;color:var(--dsw-alias-label-primary)}
-.dpe-head{display:flex;align-items:center;gap:6px;min-width:0;padding:9px 12px 6px}
-.dpe-query{display:inline-flex;align-items:center;max-width:100%;box-sizing:border-box;border:1px solid var(--dsw-alias-border-l1);border-radius:6px;padding:1px 7px;background:var(--dsw-alias-bg-layer-2);font-family:var(--dsh-font-family-code,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace);font-size:11.5px;line-height:16px;color:var(--dsw-alias-label-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.dpe-head-right{flex:none;margin-left:auto;font-family:var(--dsh-font-family-code,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace);font-size:11px;line-height:16px;color:var(--dsw-alias-label-tertiary);white-space:nowrap}
-.dpe-meta-line{display:flex;align-items:center;gap:8px;padding:0 12px 8px;font-size:11px;line-height:16px;color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums;min-width:0}
-.dpe-meta-dot{flex:none;width:2px;height:2px;border-radius:1px;background:var(--dsw-alias-label-caption,var(--dsw-alias-label-tertiary))}
-.dpe-list-region{border-top:1px solid var(--dsw-alias-border-l1);max-height:280px;overflow-y:auto;overscroll-behavior:contain}
-.dpe-list-region:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid var(--dsw-focus-ring-color,var(--dsw-alias-brand-primary));outline-offset:-2px}
-.dpe-list{margin:0;padding:0;list-style:none}
-.dpe-hit{display:grid;grid-template-columns:12px minmax(0,38%) minmax(0,1fr) max-content max-content;column-gap:8px;align-items:center;box-sizing:border-box;width:100%;min-height:26px;padding:0 12px;color:inherit;font:inherit;text-align:left;background:transparent;border:none;border-radius:0}
-.dpe-hit:hover{background:var(--dsw-specific-sidebar-fill,var(--dsw-alias-bg-layer-2))}
-.dpe-hit-icon{display:inline-flex;align-items:center;justify-content:center;width:12px;height:12px;color:var(--dsw-alias-label-secondary)}
-.dpe-hit[data-folder="true"] .dpe-hit-icon{color:var(--dsw-alias-label-primary)}
-.dpe-hit-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--dsw-alias-label-primary);font-size:12px;line-height:18px;font-weight:600}
-.dpe-hit[data-folder="true"] .dpe-hit-name{font-weight:500}
-.dpe-hit-name-button{padding:0;border:none;background:none;font:inherit;color:inherit;font-weight:600;text-decoration:underline dotted var(--dsw-alias-border-l2);text-underline-offset:2px;cursor:pointer;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
-.dpe-hit-name-button:hover{text-decoration-style:solid;color:var(--dsw-alias-label-secondary)}
-.dpe-hit-name-button:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid var(--dsw-focus-ring-color,var(--dsw-alias-brand-primary));outline-offset:-1px;border-radius:2px}
-.dpe-hit-path{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--dsh-font-family-code,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace);font-size:11px;line-height:16px;color:var(--dsw-alias-label-secondary)}
-.dpe-hit-size{min-width:52px;text-align:right;font-size:11px;line-height:16px;color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums;white-space:nowrap}
-.dpe-hit-date{min-width:84px;text-align:right;font-size:11px;line-height:16px;color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums;white-space:nowrap}
-.dpe-foot{display:flex;align-items:flex-start;gap:6px;border-top:1px solid var(--dsw-alias-border-l1);padding:7px 12px;font-size:11px;line-height:16px;color:var(--dsw-alias-label-secondary);background:var(--dsw-specific-sidebar-fill,transparent)}
-.dpe-foot-dot{flex:none;width:4px;height:4px;margin-top:6px;border-radius:50%;background:var(--dsw-alias-state-warn-primary)}
-.dpe-empty{display:flex;flex-direction:column;gap:4px;border-top:1px solid var(--dsw-alias-border-l1);padding:12px}
-.dpe-empty-icon{display:inline-flex;color:var(--dsw-alias-state-idle-primary);margin-bottom:2px}
-.dpe-empty-title{font-size:13px;line-height:20px;font-weight:500;color:var(--dsw-alias-label-primary)}
-.dpe-empty-hint{font-size:12px;line-height:18px;color:var(--dsw-alias-label-secondary)}
-.dpe-panel{border-top:1px solid var(--dsw-alias-border-l1);padding:10px 12px 12px;display:flex;flex-direction:column;gap:4px}
-.dpe-panel-state{display:flex;align-items:center;gap:6px;font-size:13px;line-height:20px;font-weight:500;color:var(--dsw-alias-label-primary)}
-.dpe-panel-state[data-tone="error"]{color:var(--dsw-alias-state-error-primary)}
-.dpe-dot{display:inline-block;width:6px;height:6px;border-radius:50%;flex:none}
-.dpe-dot[data-tone="ok"]{background:var(--dsw-alias-state-success-primary)}
-.dpe-dot[data-tone="warn"]{background:var(--dsw-alias-state-warn-primary)}
-.dpe-dot[data-tone="error"]{background:var(--dsw-alias-state-error-primary)}
-.dpe-dot[data-tone="idle"]{background:var(--dsw-alias-state-idle-primary)}
-.dpe-panel-message{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;line-height:18px;color:var(--dsw-alias-label-secondary)}
-.dpe-hint{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:var(--dsw-specific-sidebar-fill,var(--dsw-alias-bg-layer-2));padding:8px 10px;display:flex;flex-direction:column;gap:4px;margin-top:4px}
-.dpe-hint-title{font-size:11px;line-height:16px;color:var(--dsw-alias-label-tertiary)}
-.dpe-hint-text{font-size:12px;line-height:18px;color:var(--dsw-alias-label-primary)}
-.dpe-hint-code{font-family:var(--dsh-font-family-code,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace);font-size:11px;line-height:16px;color:var(--dsw-alias-label-secondary)}
-.dpe-recorded{border-top:1px solid var(--dsw-alias-border-l1);padding:8px 12px 10px;display:flex;flex-direction:column;gap:4px}
-.dpe-recorded-title{font-size:11px;line-height:16px;color:var(--dsw-alias-label-tertiary)}
-.dpe-recorded-body{margin:0;max-height:240px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;font-family:var(--dsh-font-family-code,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace);font-size:11px;line-height:16px;color:var(--dsw-alias-label-secondary)}
-.dpe-grid{display:grid;grid-template-columns:96px minmax(0,1fr);gap:4px 12px;align-items:baseline;padding:8px 12px 12px}
-.dpe-grid-key{font-size:11px;line-height:18px;color:var(--dsw-alias-label-secondary);white-space:nowrap}
-.dpe-grid-value{font-size:12px;line-height:18px;color:var(--dsw-alias-label-primary);min-width:0;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
-.dpe-grid-value[data-mono]{font-family:var(--dsh-font-family-code,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace);font-size:11px;line-height:16px;color:var(--dsw-alias-label-secondary)}
-.dpe-inspect{align-self:flex-start;margin:0 12px 10px;padding:2px 8px;border:none;border-radius:4px;background:transparent;color:var(--dsw-alias-label-secondary);font:inherit;font-size:11px;line-height:16px;cursor:pointer}
-.dpe-inspect:hover{background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary)}
-@keyframes dpe-pulse{0%,100%{opacity:.45}50%{opacity:1}}
-.dpe-running .dpe-text-running{animation:dpe-pulse 1.6s ease-in-out infinite}
-@media (prefers-reduced-motion: reduce){.dpe-running .dpe-text-running{animation:none}.dpe-chevron,.dpe-glyph{transition:none}}
-@media (max-width: 640px){.dpe-hit{grid-template-columns:12px minmax(0,1fr) max-content max-content}.dpe-hit-path{display:none}}
+.dpe-body{margin:2px 0 4px 4px;padding:0;border:none;background:none;font-family:var(--dsh-font-family-code,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace);font-size:calc(var(--dsh-content-font-size-secondary,13px) - 2px);line-height:18px;color:var(--dsw-alias-label-tertiary)}
+.dpe-line{margin:0;padding:0;white-space:pre-wrap;overflow-wrap:anywhere;color:inherit}
+.dpe-hit{display:flex;align-items:baseline;gap:8px;min-width:0;padding:0;border:none;background:none;font:inherit;text-align:left;color:inherit;white-space:nowrap}
+.dpe-hit-icon{flex:none;display:inline-flex;align-self:center;color:inherit}
+.dpe-hit-name{flex:none;max-width:45%;overflow:hidden;text-overflow:ellipsis;color:var(--dsw-alias-label-secondary)}
+button.dpe-hit-name{padding:0;border:none;background:none;font:inherit;cursor:pointer;text-align:left}
+button.dpe-hit-name:hover{color:var(--dsw-alias-label-primary);text-decoration:underline}
+button.dpe-hit-name:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid var(--dsw-focus-ring-color,var(--dsw-alias-brand-primary));outline-offset:-1px;border-radius:2px}
+.dpe-hit-path{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;color:inherit}
+.dpe-hit-meta{flex:none;color:inherit;font-variant-numeric:tabular-nums}
+.dpe-hit-list{margin:0;padding:0;list-style:none}
+.dpe-scroll{max-height:280px;overflow-y:auto;overscroll-behavior:contain}
+.dpe-scroll:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid var(--dsw-focus-ring-color,var(--dsw-alias-brand-primary));outline-offset:-2px}
+.dpe-error{color:var(--dsw-alias-state-error-primary)}
+.dpe-inspect{align-self:flex-start;margin:2px 0 0;padding:0;border:none;background:none;color:var(--dsw-alias-label-tertiary);font:inherit;font-size:11px;line-height:16px;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.dpe-inspect:hover{color:var(--dsw-alias-label-secondary)}
+@media (prefers-reduced-motion: reduce){.dpe-chevron,.dpe-glyph{transition:none}}
 `;
     //#endregion
 
@@ -474,44 +425,29 @@ window.__ModuleLoader__.load({
         { d: 'M6.9 2.5a4.4 4.4 0 1 0 0 8.8 4.4 4.4 0 0 0 0-8.8Z' },
         { d: 'm10.2 10.2 3.3 3.3' }
       ]);
-    const IdleSearchGlyph = () =>
-      svg({ style: { display: 'block' }, width: 18, height: 18 }, [
-        { d: 'M7.8 2.6a5.2 5.2 0 1 0 0 10.4 5.2 5.2 0 0 0 0-10.4Z' },
-        { d: 'm11.7 11.7 3.6 3.6' }
-      ]);
     const FileGlyph = () =>
-      svg({ style: { display: 'block' }, width: 12, height: 12 }, [
+      svg({ style: { display: 'block' }, width: 11, height: 11 }, [
         { d: 'M3.9 1.9h4.8l3.1 3.1v9.1H3.9z' },
         { d: 'M8.6 2v3.2h3.2' }
       ]);
     const FolderGlyph = () =>
-      svg({ style: { display: 'block' }, width: 12, height: 12 }, [{ d: 'M1.8 3.4h4.1l1.2 1.6h7.1v7.6H1.8z', fill: 'currentColor' }]);
+      svg({ style: { display: 'block' }, width: 11, height: 11 }, [
+        { d: 'M1.8 3.4h4.1l1.2 1.6h7.1v7.6H1.8z', fill: 'currentColor' }
+      ]);
     const StatusGlyph = () => svg({ style: { display: 'block' } }, [{ d: 'M1.5 8h3.1l1.5-4 2.6 8 1.4-4h3.4' }]);
-    const ChevronGlyph = () =>
-      svg({ style: { display: 'block' } }, [{ d: 'm4.2 6.4 3.8 3.8 3.8-3.8' }]);
+    const ChevronGlyph = () => svg({ style: { display: 'block' } }, [{ d: 'm4.2 6.4 3.8 3.8 3.8-3.8' }]);
     //#endregion
 
     //#region shared view
-    /** One row-level state chip (truncated results, failed call, missing client, loading index). */
-    function StateChip(props) {
-      return h(
-        'span',
-        { className: 'dpe-chip', 'data-tone': props.tone },
-        h('span', { className: 'dpe-chip-dot', 'aria-hidden': true }),
-        props.label
-      );
-    }
-
     /**
-     * Disclosure shell shared by both cards: the always-visible compact row plus
-     * the expanded body. The row is a `div[role=button]` like the first-party
-     * ToolRow, which keeps its text selectable; Enter/Space toggle it.
+     * Disclosure shell shared by both cards: one dim text row plus plain
+     * left-aligned body text. The row is a `div[role=button]` like the
+     * first-party ToolRow, so its text stays selectable; Enter/Space toggles it.
      */
     function CardShell(props) {
-      const { toolName, title, glyph, summary, summaryTone, summaryMono, suffix, chip, dotTone, state, expandable } = props;
+      const { toolName, title, glyph, summary, summaryTone, suffix, state, expandable } = props;
       const { disclosure, body, inspect, t, callId, bodyLabel } = props;
       const bodyId = callId === undefined ? undefined : `dpe-body-${callId}`;
-      const running = state === 'preparing' || state === 'running';
       const open = expandable && disclosure.expanded;
       const onKeyDown = (event) => {
         if (event.key !== 'Enter' && event.key !== ' ') return;
@@ -531,7 +467,7 @@ window.__ModuleLoader__.load({
       if (open) rowProps['data-open'] = 'true';
       return h(
         'div',
-        { className: `dpe-root${running ? ' dpe-running' : ''}`, 'data-tool': toolName, 'data-state': state },
+        { className: 'dpe-root', 'data-tool': toolName, 'data-state': state },
         h(
           'div',
           rowProps,
@@ -543,20 +479,8 @@ window.__ModuleLoader__.load({
           ),
           h('span', { className: 'dpe-title' }, title),
           summary !== '' && h('span', { className: 'dpe-sep', 'aria-hidden': true }),
-          dotTone !== undefined && h('span', { className: 'dpe-dot', 'data-tone': dotTone, 'aria-hidden': true }),
-          summary !== '' &&
-            h(
-              'span',
-              {
-                className: 'dpe-summary',
-                'data-query': summaryMono ? 'true' : undefined,
-                'data-tone': summaryTone,
-                title: summaryMono ? summary : undefined
-              },
-              summary
-            ),
-          suffix !== undefined && suffix !== null && suffix !== '' && h('span', { className: 'dpe-suffix' }, suffix),
-          chip !== undefined && chip !== null && h(StateChip, chip)
+          summary !== '' && h('span', { className: 'dpe-summary', 'data-tone': summaryTone, title: summary }, summary),
+          suffix !== undefined && suffix !== null && suffix !== '' && h('span', { className: 'dpe-suffix' }, suffix)
         ),
         open &&
           h(
@@ -582,28 +506,15 @@ window.__ModuleLoader__.load({
       return { expanded, toggle };
     }
 
-    /** Recorded result text for results this half cannot project (old logs, foreign writers). */
-    function RecordedBody(props) {
-      const text = props.text;
-      if (text === '') return null;
-      return h(
-        'div',
-        { className: 'dpe-recorded' },
-        h('span', { className: 'dpe-recorded-title' }, props.title),
-        h('pre', { className: 'dpe-recorded-body', tabIndex: 0 }, text)
-      );
+    /** One plain text line in the body. */
+    function Line(props) {
+      return h('div', { className: props.tone === 'error' ? 'dpe-line dpe-error' : 'dpe-line' }, props.children);
     }
 
-    /** "How to fix" inset used by both cards' failure states. */
-    function HintBlock(props) {
-      const { t, text, code } = props;
-      return h(
-        'div',
-        { className: 'dpe-hint' },
-        h('span', { className: 'dpe-hint-title' }, t('hint.title')),
-        h('span', { className: 'dpe-hint-text' }, text),
-        code !== undefined && h('span', { className: 'dpe-hint-code' }, code)
-      );
+    /** Recorded result text for results this half cannot project (old logs, foreign writers). */
+    function RecordedBody(props) {
+      if (props.text === '') return null;
+      return [h(Line, { key: 'label' }, props.title), h(Line, { key: 'text' }, props.text)];
     }
     //#endregion
 
@@ -614,46 +525,61 @@ window.__ModuleLoader__.load({
       return `search.sort.${known.includes(sort) ? sort : 'name'}`;
     }
 
-    /** One hit row: glyph, name, dimmed parent path, size, modified date. */
+    /** One hit line: glyph, name, dimmed parent path, size and date - all left aligned. */
     function SearchHit(props) {
       const { row, openFile, localeTag, t } = props;
-      const sizeCell = row.folder ? t('search.folderWord') : formatBytes(row.size);
-      const dateCell = formatModified(row.modified, localeTag);
-      const nameContent = row.folder ? `${row.name}/` : row.name;
-      const nameCell =
+      const metaParts = [];
+      if (row.folder) metaParts.push(t('search.folderWord'));
+      else if (formatBytes(row.size) !== '') metaParts.push(formatBytes(row.size));
+      const date = formatModified(row.modified, localeTag);
+      if (date !== '') metaParts.push(date);
+      const label = row.folder ? `${row.name}/` : row.name;
+      const name =
         !row.folder && typeof openFile === 'function'
           ? h(
               'button',
               {
                 type: 'button',
-                className: 'dpe-hit-name-button',
-                title: row.name,
+                className: 'dpe-hit-name',
+                title: row.path,
                 'aria-label': t('search.openAria', { name: row.name }),
                 onClick: (event) => {
                   event.stopPropagation();
                   openFile(row.path);
                 }
               },
-              nameContent
+              label
             )
-          : h('span', { className: 'dpe-hit-name', title: row.name }, nameContent);
+          : h('span', { className: 'dpe-hit-name', title: row.path }, label);
       return h(
         'li',
-        { className: 'dpe-hit', 'data-folder': row.folder ? 'true' : 'false', title: row.path },
+        { className: 'dpe-hit' },
         h('span', { className: 'dpe-hit-icon', 'aria-hidden': true }, h(row.folder ? FolderGlyph : FileGlyph)),
-        nameCell,
+        name,
         h('span', { className: 'dpe-hit-path', title: parentPath(row.path) }, compactParentPath(parentPath(row.path))),
-        h('span', { className: 'dpe-hit-size' }, sizeCell),
-        h('span', { className: 'dpe-hit-date' }, dateCell)
+        metaParts.length > 0 && h('span', { className: 'dpe-hit-meta' }, metaParts.join(' · '))
       );
     }
 
-    /** Expanded search body: query chip, totals line, hit list, honest truncation footer. */
+    /** Expanded search body: one meta line, left-aligned hit lines, plain footer text. */
     function SearchBody(props) {
       const { model, localeTag, openFile, t } = props;
-      const totals = model.total === 1 ? t('search.matchOne') : t('search.matches', { total: formatCount(model.total, localeTag) });
-      const sortLabel = t(sortLabelKey(model.sort));
-      const order = t(model.descending ? 'search.order.descending' : 'search.order.ascending');
+      const totals =
+        model.total === 1 ? t('search.matchOne') : t('search.matches', { total: formatCount(model.total, localeTag) });
+      const parts = [totals];
+      parts.push(
+        t('search.showing', {
+          returned: formatCount(model.rows.length, localeTag),
+          total: formatCount(model.returned, localeTag)
+        })
+      );
+      parts.push(
+        t('search.sortedBy', {
+          sort: t(sortLabelKey(model.sort)),
+          order: t(model.descending ? 'search.order.descending' : 'search.order.ascending')
+        })
+      );
+      if (model.truncated) parts.push(t('search.truncatedWord'));
       const footer = [];
       if (model.rows.length < model.returned) {
         footer.push(
@@ -666,26 +592,13 @@ window.__ModuleLoader__.load({
       if (model.returned > CARD_ROW_LIMIT) footer.push(t('search.footerCapped', { cap: CARD_ROW_LIMIT }));
       if (model.truncated) footer.push(t('search.footerTruncated'));
       return [
-        h(
-          'div',
-          { key: 'head', className: 'dpe-head' },
-          h('span', { className: 'dpe-query', title: model.query }, model.query === '' ? '—' : model.query)
-        ),
-        h(
-          'div',
-          { key: 'meta', className: 'dpe-meta-line' },
-          h('span', null, model.returned === 0 ? t('search.noMatches') : totals),
-          h('span', { className: 'dpe-meta-dot', 'aria-hidden': true }),
-          h('span', null, t('search.showing', { returned: formatCount(model.rows.length, localeTag), total: formatCount(model.returned, localeTag) })),
-          h('span', { className: 'dpe-meta-dot', 'aria-hidden': true }),
-          h('span', null, t('search.sortedBy', { sort: sortLabel, order }))
-        ),
+        h(Line, { key: 'meta' }, parts.join(' · ')),
         model.rows.length > 0
           ? h(
               'div',
               {
                 key: 'list',
-                className: 'dpe-list-region',
+                className: 'dpe-scroll',
                 role: 'region',
                 tabIndex: 0,
                 'aria-label':
@@ -700,24 +613,20 @@ window.__ModuleLoader__.load({
               },
               h(
                 'ul',
-                { className: 'dpe-list' },
+                { className: 'dpe-hit-list' },
                 model.rows.map((row, index) => h(SearchHit, { key: `${index}:${row.path}`, row, openFile, localeTag, t }))
               )
             )
-          : h(
+          : null,
+        model.rows.length === 0
+          ? h(
               'div',
-              { key: 'empty', className: 'dpe-empty' },
-              h('span', { className: 'dpe-empty-icon', 'aria-hidden': true }, h(IdleSearchGlyph)),
-              h('span', { className: 'dpe-empty-title' }, t('search.emptyTitle')),
-              h('span', { className: 'dpe-empty-hint' }, t('search.emptyHint'))
-            ),
-        footer.length > 0 &&
-          h(
-            'div',
-            { key: 'foot', className: 'dpe-foot' },
-            h('span', { className: 'dpe-foot-dot', 'aria-hidden': true }),
-            h('span', null, footer.join(' '))
-          )
+              { key: 'empty' },
+              h(Line, null, t('search.emptyTitle')),
+              h(Line, null, t('search.emptyHint'))
+            )
+          : null,
+        footer.length > 0 ? h(Line, { key: 'foot' }, footer.join(' ')) : null
       ].filter(Boolean);
     }
 
@@ -737,42 +646,37 @@ window.__ModuleLoader__.load({
       const kind = state === 'ok' ? null : failureKind(failedMessage);
 
       let summary = query;
-      let summaryMono = true;
       let summaryTone;
       if (running) {
         summary = query === '' ? t(state === 'preparing' ? 'state.preparing' : 'state.searching') : query;
-        summaryMono = query !== '';
       } else if (state === 'error' || state === 'stopped') {
         summary = failedMessage === '' ? t('search.failedTitle') : firstLine(failedMessage);
-        summaryMono = false;
         summaryTone = 'error';
-      } else if (model !== null && model.total === 0) {
-        summary = query === '' ? t('search.noMatches') : query;
       }
 
       let suffix = null;
-      let chip = null;
       if (model !== null && state === 'ok') {
         if (model.returned === 0) suffix = t('search.noMatches');
-        else suffix = `${formatCount(model.returned, localeTag)} / ${formatCount(model.total, localeTag)}`;
-        if (model.truncated) chip = { label: t('search.chipTruncated'), tone: 'warn' };
-      } else if (state === 'error' || state === 'stopped') {
-        chip = kind === 'notRunning'
-          ? { label: t('search.chipNotRunning'), tone: 'idle' }
-          : { label: t('search.chipFailed'), tone: 'error' };
+        else {
+          const parts = [`${formatCount(model.returned, localeTag)} / ${formatCount(model.total, localeTag)}`];
+          if (model.truncated) parts.push(t('search.truncatedWord'));
+          suffix = parts.join(' · ');
+        }
       }
 
       let body = null;
       if (phase === 'result') {
         if (state === 'error' || state === 'stopped') {
-          body = h(FailurePanel, {
-            tone: kind === 'notRunning' ? 'idle' : 'error',
-            title: kind === 'notRunning' ? t('search.notRunningTitle') : t('search.failedTitle'),
-            message: failedMessage,
-            hint: kind === 'notRunning' ? t('hint.notRunning') : t('hint.searchGeneric'),
-            code: kind === 'notRunning' ? AUTOSTART_SNIPPET : undefined,
-            t
-          });
+          body = [
+            h(Line, { key: 'state', tone: 'error' }, kind === 'notRunning' ? t('search.notRunningTitle') : t('search.failedTitle')),
+            failedMessage !== '' ? h(Line, { key: 'message', tone: 'error' }, failedMessage) : null,
+            h(
+              Line,
+              { key: 'hint' },
+              `${t('hint.title')}: ${kind === 'notRunning' ? t('hint.notRunning') : t('hint.searchGeneric')}`
+            ),
+            kind === 'notRunning' ? h(Line, { key: 'code' }, AUTOSTART_SNIPPET) : null
+          ].filter(Boolean);
         } else if (model !== null) {
           body = h(SearchBody, { model, localeTag, openFile, t });
         } else {
@@ -787,10 +691,8 @@ window.__ModuleLoader__.load({
         title: t('search.title'),
         glyph: h(SearchGlyph),
         summary,
-        summaryMono,
         summaryTone,
         suffix,
-        chip,
         state,
         expandable,
         disclosure,
@@ -799,99 +701,47 @@ window.__ModuleLoader__.load({
         t
       });
     }
-
-    /** Failure panel: state dot, localized state phrase, the recorded message, and the fix hint. */
-    function FailurePanel(props) {
-      const { tone, title, message, hint, code, t } = props;
-      return h(
-        'div',
-        { className: 'dpe-panel' },
-        h(
-          'div',
-          { className: 'dpe-panel-state', 'data-tone': tone === 'error' ? 'error' : undefined },
-          h('span', { className: 'dpe-dot', 'data-tone': tone, 'aria-hidden': true }),
-          title
-        ),
-        message !== '' && h('pre', { className: 'dpe-panel-message' }, message),
-        h(HintBlock, { t, text: hint, code })
-      );
-    }
     //#endregion
 
     //#region everything_status
-    /** Expanded status body: status head, definition grid, and the diagnostics panel when unusable. */
+    /** Expanded status body: plain label/value lines, left aligned. */
     function StatusBody(props) {
       const { model, localeTag, t } = props;
-      const ready = model.databaseLoaded !== false;
-      const rows = [
-        [
-          t('status.field.indexStatus'),
-          model.databaseLoaded === undefined
-            ? t('status.value.unknown')
-            : model.databaseLoaded
-              ? t('status.value.ready')
-              : t('status.value.loading'),
-          false
-        ]
-      ];
+      const rows = [];
+      const stateWord = model.available
+        ? t('status.state.available')
+        : model.error === undefined
+          ? t('status.state.unavailable')
+          : failureKind(model.error) === 'notRunning'
+            ? t('status.state.notRunning')
+            : t('status.state.unavailable');
+      rows.push([t('status.field.state'), stateWord]);
+      rows.push([
+        t('status.field.version'),
+        model.clientVersion === undefined ? t('status.value.unknown') : `v${model.clientVersion}`
+      ]);
       if (model.indexedItems !== undefined) {
-        rows.push([t('status.field.indexedItems'), formatCount(model.indexedItems, localeTag), false]);
+        rows.push([
+          t('status.field.indexedItems'),
+          model.indexedItems === 1
+            ? t('status.itemValue', { n: formatCount(model.indexedItems, localeTag) })
+            : t('status.itemsValue', { n: formatCount(model.indexedItems, localeTag) })
+        ]);
       }
-      if (model.platform !== '') rows.push([t('status.field.platform'), model.platform, true]);
-      if (model.sdkDll !== '') rows.push([t('status.field.sdkDll'), model.sdkDll, true]);
-      const grid = [];
-      for (const [key, value, mono] of rows) {
-        grid.push(h('span', { key: `k:${key}`, className: 'dpe-grid-key' }, key));
-        grid.push(
-          h('span', { key: `v:${key}`, className: 'dpe-grid-value', 'data-mono': mono ? 'true' : undefined }, value)
-        );
+      if (model.databaseLoaded !== undefined) {
+        rows.push([
+          t('status.field.indexStatus'),
+          model.databaseLoaded ? t('status.value.ready') : t('status.value.loading')
+        ]);
       }
-      return [
-        model.available
-          ? h(
-              'div',
-              { key: 'head', className: 'dpe-head' },
-              h(
-                'span',
-                { className: 'dpe-panel-state' },
-                h('span', { className: 'dpe-dot', 'data-tone': ready ? 'ok' : 'warn', 'aria-hidden': true }),
-                t('status.state.available')
-              ),
-              !ready && h(StateChip, { label: t('status.chipIndexLoading'), tone: 'warn' }),
-              model.clientVersion !== undefined &&
-                h('span', { className: 'dpe-head-right' }, `v${model.clientVersion}`)
-            )
-          : h(
-              'div',
-              { key: 'head', className: 'dpe-head' },
-              h(
-                'span',
-                { className: 'dpe-panel-state' },
-                h('span', { className: 'dpe-dot', 'data-tone': model.error === undefined ? 'idle' : failureKind(model.error) === 'notRunning' ? 'idle' : 'error', 'aria-hidden': true }),
-                model.error === undefined
-                  ? t('status.state.unavailable')
-                  : failureKind(model.error) === 'notRunning'
-                    ? t('status.state.notRunning')
-                    : t('status.state.unavailable')
-              ),
-              model.clientVersion !== undefined &&
-                h('span', { className: 'dpe-head-right' }, `v${model.clientVersion}`)
-            ),
-        h('div', { key: 'grid', className: 'dpe-grid' }, grid),
-        !model.available &&
-          h(
-            'div',
-            { key: 'diag', className: 'dpe-panel' },
-            h(
-              'div',
-              { className: 'dpe-panel-state' },
-              h('span', { className: 'dpe-dot', 'data-tone': 'error', 'aria-hidden': true }),
-              t('status.diagnostics')
-            ),
-            model.error !== undefined && h('pre', { className: 'dpe-panel-message' }, model.error),
-            h(HintBlock, { t, text: model.hint ?? t('status.hintGeneric') })
-          )
-      ].filter(Boolean);
+      if (model.platform !== '') rows.push([t('status.field.platform'), model.platform]);
+      if (model.sdkDll !== '') rows.push([t('status.field.sdkDll'), model.sdkDll]);
+      const out = rows.map(([key, value], index) => h(Line, { key: `row:${index}` }, `${key}  ${value}`));
+      if (!model.available) {
+        if (model.error !== undefined) out.push(h(Line, { key: 'error', tone: 'error' }, model.error));
+        out.push(h(Line, { key: 'hint' }, `${t('hint.title')}: ${model.hint ?? t('status.hintGeneric')}`));
+      }
+      return out;
     }
 
     /** Everything availability card. */
@@ -906,23 +756,20 @@ window.__ModuleLoader__.load({
       const model = meta === null ? null : normalizeStatusMeta(meta);
       const recorded = phase === 'result' ? resultText(block) : '';
 
-      let summary = '';
       let stateWord = t('status.state.unknown');
-      let dotTone = 'idle';
-      let chip = null;
+      let summary = '';
+      let summaryTone;
       if (running) {
         stateWord = t('state.checking');
-        summary = '';
       } else if (state === 'error' || state === 'stopped') {
         stateWord = t('status.state.failed');
-        dotTone = 'error';
         summary = firstLine(recorded.replace(/^Error:\s*/i, '').trim());
+        summaryTone = 'error';
       } else if (model === null) {
         stateWord = t('status.state.unknown');
         summary = firstLine(recorded);
       } else if (model.available) {
         stateWord = t('status.state.available');
-        dotTone = model.databaseLoaded === false ? 'warn' : 'ok';
         const parts = [];
         if (model.clientVersion !== undefined) parts.push(`v${model.clientVersion}`);
         if (model.indexedItems !== undefined) {
@@ -932,25 +779,22 @@ window.__ModuleLoader__.load({
             })
           );
         }
+        if (model.databaseLoaded === false) parts.push(t('status.indexLoadingWord'));
         summary = parts.join(' · ');
-        if (model.databaseLoaded === false) chip = { label: t('status.chipIndexLoading'), tone: 'warn' };
       } else {
         const kind = model.error === undefined ? 'unavailable' : failureKind(model.error);
         stateWord = kind === 'notRunning' ? t('status.state.notRunning') : t('status.state.unavailable');
-        dotTone = kind === 'notRunning' ? 'idle' : 'error';
-        summary = model.error !== undefined ? firstLine(model.error) : '';
+        summary = model.error === undefined ? '' : firstLine(model.error);
       }
 
       let body = null;
       if (phase === 'result') {
         if (state === 'error' || state === 'stopped') {
-          body = h(FailurePanel, {
-            tone: 'error',
-            title: t('status.state.failed'),
-            message: recorded.replace(/^Error:\s*/i, '').trim(),
-            hint: t('status.hintGeneric'),
-            t
-          });
+          body = [
+            h(Line, { key: 'state', tone: 'error' }, t('status.state.failed')),
+            h(Line, { key: 'message', tone: 'error' }, recorded.replace(/^Error:\s*/i, '').trim()),
+            h(Line, { key: 'hint' }, `${t('hint.title')}: ${t('status.hintGeneric')}`)
+          ].filter(Boolean);
         } else if (model !== null) {
           body = h(StatusBody, { model, localeTag, t });
         } else {
@@ -964,16 +808,14 @@ window.__ModuleLoader__.load({
         callId: props.callId,
         title: t('status.title'),
         glyph: h(StatusGlyph),
-        bodyLabel: t('status.detailsAria'),
         summary: stateWord,
-        summaryMono: false,
+        summaryTone,
         suffix: summary,
-        chip,
-        dotTone,
         state,
         expandable,
         disclosure,
         body,
+        bodyLabel: t('status.detailsAria'),
         inspect,
         t
       });
@@ -1023,8 +865,8 @@ window.__ModuleLoader__.load({
 
     /** Render one card inside the crash boundary without owning any hook itself. */
     function guarded(Card) {
-      return function GuardedCard(props) {
-        return h(CardBoundary, { cardProps: props }, h(Card, props));
+      return function GuardedCard(cardProps) {
+        return h(CardBoundary, { cardProps }, h(Card, cardProps));
       };
     }
 
