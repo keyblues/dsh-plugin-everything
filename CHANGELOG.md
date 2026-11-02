@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- 描述改为差异化定位：官方 Everything SDK 在进程内调用（N-API FFI），不启动 `es.exe`、
+  不监听 HTTP 端口，毫秒级返回结果；同步更新 README 中英版、`package.json` 描述、
+  插件 locale 描述与 GitHub 仓库描述。
+
 ## v1.1.0 (2026-11-02)
 
 - **新增 Web 界面工具卡片（Client 半 `client.js`）**：通过 `dsh.client` 声明接入 Web 端，

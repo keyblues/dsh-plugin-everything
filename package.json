@@ -1,7 +1,7 @@
 {
   "name": "dsh-plugin-everything",
   "version": "1.1.0",
-  "description": "DeepSeek Harness (DSH) plugin: instant whole-disk file search through the local voidtools Everything index, with dedicated Web UI tool cards. DSH 插件：接入本机 Everything 索引，全盘秒级搜索文件，并为 Web 界面提供专用工具卡片。",
+  "description": "DeepSeek Harness (DSH) plugin: whole-disk file search through the official voidtools Everything SDK, called in-process over N-API FFI — millisecond-level queries without es.exe or an HTTP server, plus dedicated Web UI tool cards. DSH 插件：经官方 Everything SDK 在进程内查询全盘索引，毫秒级返回路径、大小与修改时间，无需 es.exe 与 HTTP 服务，并提供 Web 工具卡片。",
   "keywords": [
     "dsh-plugin",
     "deepseek-harness",

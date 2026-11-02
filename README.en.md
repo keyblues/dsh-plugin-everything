@@ -15,7 +15,9 @@
 
 <p align="center">
   A <a href="https://github.com/deepseek-ai/deepseek-harness">DeepSeek Harness</a> (DSH) plugin that gives the agent
-  instant whole-disk file search through the local <a href="https://www.voidtools.com/">voidtools Everything</a> NTFS index.
+  whole-disk file search through the official <a href="https://www.voidtools.com/">voidtools Everything</a> SDK:
+  the plugin calls <code>Everything64.dll</code> in-process over N-API FFI, so queries come back in milliseconds —
+  no <code>es.exe</code> process, no HTTP server.
   <br />
   中文文档：<a href="README.md">README.md</a>
 </p>
@@ -30,7 +32,7 @@
 By default an agent can only walk directories inside its workspace, which is slow for cross-drive
 lookups, installed tools, or old downloads. This plugin exposes the Everything index as model tools:
 one call returns full paths plus size and modified time for matches across every indexed volume,
-usually in a few milliseconds.
+in milliseconds — the call goes straight to the SDK DLL in-process, with no subprocess or HTTP hop.
 
 ## Requirements
 
@@ -38,7 +40,8 @@ usually in a few milliseconds.
 - [voidtools Everything](https://www.voidtools.com/) installed **and running** (1.4+, tested with
   1.4.1.1032). The index lives inside the Everything process; the plugin reads it over the
   Everything SDK IPC. Without the client there is nothing to query.
-- No Everything Service and no HTTP/ETP server are required.
+- No Everything Service, no HTTP/ETP server and no `es.exe` (the Everything CLI) are required — the
+  plugin ships the official SDK DLL.
 - If Everything is not running the tools return a clear hint; enable `autoStart` in the config to
   let the plugin launch it.
 
@@ -189,6 +192,8 @@ index.js  ── worker_threads ──▶  sdk-worker.cjs
 - **FFI**: the Harness Host is an Electron 44 / Node 24 runtime (Node-API 10), so a regular Node
   native addon ABI would not match; the plugin uses the N-API FFI module koffi 3.3.4 with its
   win32-x64 prebuilt binary.
+- **No subprocess, no port**: the query path is worker → koffi → `Everything64.dll` → Everything
+  IPC; no `es.exe` child process is spawned and no local HTTP port is opened.
 - **Worker isolation**: `Everything_QueryW(true)` waits on the Everything IPC reply without a
   native timeout, so queries run in a worker thread with our own timeout. A timed-out worker is
   terminated and rebuilt on the next query, keeping the Host event loop responsive.

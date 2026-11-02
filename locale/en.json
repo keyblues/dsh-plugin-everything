@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Everything File Search",
-    "description": "Instant whole-disk file and folder search for the agent through the local voidtools Everything index."
+    "description": "Whole-disk file search for the agent through the official Everything SDK: millisecond queries, no es.exe or HTTP server."
   }
 }

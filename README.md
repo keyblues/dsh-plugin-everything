@@ -14,8 +14,9 @@
 </p>
 
 <p align="center">
-  给 <a href="https://github.com/deepseek-ai/deepseek-harness">DeepSeek Harness</a> 智能体加上「全盘秒级找文件」的能力：直接查询本机
-  <a href="https://www.voidtools.com/">voidtools Everything</a> 的 NTFS 索引。
+  给 <a href="https://github.com/deepseek-ai/deepseek-harness">DeepSeek Harness</a> 智能体加上「全盘毫秒级找文件」的能力：通过官方
+  <a href="https://www.voidtools.com/">voidtools Everything</a> SDK 在进程内直接查询本机 NTFS 索引，
+  不启动 <code>es.exe</code>，不监听 HTTP 端口。
   <br />
   English: <a href="README.en.md">README.en.md</a>
 </p>
@@ -29,7 +30,8 @@
 
 Harness 里的 Agent 默认只能在工作区里逐个目录找文件，跨盘、找某个安装目录、找历史
 下载时很慢。本插件把 Everything 的索引能力暴露成模型工具：一次查询就能拿到全盘
-匹配的完整路径、大小和修改时间，查询耗时通常只有几毫秒。
+匹配的完整路径、大小和修改时间，查询耗时在毫秒级——查询直接在进程内走官方 SDK，
+不经过子进程或 HTTP 转发。
 
 ## 前置条件
 
@@ -37,7 +39,8 @@ Harness 里的 Agent 默认只能在工作区里逐个目录找文件，跨盘�
 - 本机已安装 [voidtools Everything](https://www.voidtools.com/) **并保持运行**（1.4 或更新；
   实测 1.4.1.1032）。索引保存在 Everything 进程内，插件通过 Everything SDK 的 IPC
   读取结果，因此没有安装或没有运行 Everything 时无法工作。
-- **不需要**安装 Everything Service，也**不需要**开启 HTTP/ETP 服务器。
+- **不需要**安装 Everything Service，**不需要**开启 HTTP/ETP 服务器，也**不需要** `es.exe`
+  （Everything 命令行工具）——插件自带官方 SDK DLL。
 - Everything 未运行时，工具会返回明确提示；可在配置里打开 `autoStart` 让插件自动拉起它。
 
 ## 安装
@@ -187,6 +190,8 @@ index.js  ── worker_threads ──▶  sdk-worker.cjs
   结构化拿到路径、大小与 FILETIME，不做文本解析。
 - **FFI**：Harness Host 是 Electron 44 / Node 24 运行时（Node-API 10），普通 Node 原生扩展
   ABI 不匹配，因此使用 N-API FFI 模块 koffi 3.3.4（以及 win32-x64 预编译二进制）。
+- **无子进程、无端口**：查询路径是 worker → koffi → `Everything64.dll` → Everything IPC，
+  不生成 `es.exe` 子进程，也不监听本地 HTTP 端口。
 - **Worker 隔离**：SDK 的 `Everything_QueryW(true)` 内部会无限等待 Everything 的 IPC
   回复；查询放在 worker 线程并设超时，避免卡死 Harness 的 Host 事件循环。超时后终止
   worker，下一次查询自动重建。

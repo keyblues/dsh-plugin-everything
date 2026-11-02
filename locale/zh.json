@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Everything 文件搜索",
-    "description": "接入本机 voidtools Everything 索引，让智能体全盘秒级查找文件与文件夹。"
+    "description": "经官方 Everything SDK 为智能体提供全盘文件搜索：毫秒级返回，无需 es.exe 与 HTTP 服务。"
   }
 }
