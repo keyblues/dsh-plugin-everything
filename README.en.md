@@ -138,8 +138,8 @@ cards instead of the generic tool row:
 
 | Card | Collapsed row | Expanded body |
 | --- | --- | --- |
-| **Everything search** | search glyph, title, query, `returned/matched` counter | query chip, match totals with a truncation marker, a scrollable hit list (file/folder glyph, name, containing directory, size and modified time); clicking a hit opens the file in the sidebar |
-| **Everything status** | availability, client version | diagnostic grid (state, client version, indexed items, index loading state, platform, SDK DLL path); when unavailable, the recorded error and the `autoStart` hint |
+| **Everything search** | search glyph, title, query, `returned/matched` counter | a totals line (matches / shown / sort / truncation) plus at most 8 hit lines (file/folder glyph, name, containing directory, size and modified time; clicking the name opens the file); extra rows fold into one explanatory line and stay in the model-facing result text |
+| **Everything status** | state word, client version / indexed items | left-aligned `state / version / indexed items / index status / platform / SDK DLL` lines; when unavailable, the recorded error plus the `autoStart` hint |
 
 - **Data source:** the Host tool's `output.presentationMeta` projection, persisted with the result.
   The card never re-parses the model-facing result text, so paths containing `(` or `,` cannot be

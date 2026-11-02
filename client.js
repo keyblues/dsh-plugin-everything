@@ -51,7 +51,6 @@ window.__ModuleLoader__.load({
         'search.emptyHint': 'Try a broader term, a * wildcard, or drop filters such as ext:.',
         'search.folderWord': 'folder',
         'search.showingRows': 'Showing the first {shown} of {returned} returned rows.',
-        'search.footerCapped': 'The card lists at most {cap} rows; the full result text above lists every match.',
         'search.footerTruncated': 'Results were truncated. Raise max (up to 500) or narrow the query to see more.',
         'search.notRunningTitle': "Everything isn't running",
         'search.failedTitle': 'Search failed',
@@ -108,7 +107,6 @@ window.__ModuleLoader__.load({
         'search.emptyHint': '试试更宽泛的关键词、* 通配符，或去掉 ext: 之类的筛选条件。',
         'search.folderWord': '文件夹',
         'search.showingRows': '仅显示前 {shown} 项（共返回 {returned} 项）。',
-        'search.footerCapped': '卡片最多列出 {cap} 行结果，完整结果请见上方结果文本。',
         'search.footerTruncated': '命中结果已被截断，提高 max（最多 500）或缩小查询范围可看到更多。',
         'search.notRunningTitle': 'Everything 未运行',
         'search.failedTitle': '搜索失败',
@@ -144,6 +142,8 @@ window.__ModuleLoader__.load({
     };
     /** Result rows this half is willing to render; the Host caps metadata at the same number. */
     const CARD_ROW_LIMIT = 100;
+    /** Hit lines the expanded card draws before folding, matching the shipped 8-line card blocks. */
+    const CARD_ROW_DISPLAY = 8;
     /** Recorded failure text that means "the Everything client is not running", not a plugin bug. */
     const NOT_RUNNING_PATTERN = /not running|未运行|\bIPC\b/i;
     /** The one line that actually turns auto-start on. */
@@ -382,7 +382,7 @@ window.__ModuleLoader__.load({
 .dpe-summary[data-tone="error"]{color:var(--dsw-alias-state-error-primary)}
 .dpe-root[data-state="error"] .dpe-leading,.dpe-root[data-state="stopped"] .dpe-leading{color:var(--dsw-alias-state-error-primary)}
 .dpe-suffix{flex:none;margin-left:8px;font-size:var(--dsh-content-font-size-secondary,13px);line-height:calc(24px + var(--dsh-content-font-delta,0px));color:inherit;font-variant-numeric:tabular-nums;white-space:nowrap}
-.dpe-io{box-sizing:border-box;display:flex;flex-direction:column;gap:1px;margin:4px 0 4px 4px;padding:8px 12px;border:.5px solid var(--dsw-alias-border-l1);border-radius:var(--dsw-radius-lg,10px);background:var(--dsw-alias-markdown-code-block,var(--dsw-alias-bg-layer-2));font-family:var(--dsh-font-family-code,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace);font-size:calc(var(--dsh-content-font-size-secondary,13px) - 2px);line-height:18px;color:var(--dsw-alias-label-secondary);max-height:260px;overflow-y:auto;overscroll-behavior:contain}
+.dpe-io{box-sizing:border-box;display:flex;flex-direction:column;gap:1px;margin:4px 0 4px 4px;padding:8px 12px;border:.5px solid var(--dsw-alias-border-l1);border-radius:var(--dsw-radius-lg,10px);background:var(--dsw-alias-markdown-code-block,var(--dsw-alias-bg-layer-2));font-family:var(--dsh-font-family-code,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace);font-size:calc(var(--dsh-content-font-size-secondary,13px) - 2px);line-height:18px;color:var(--dsw-alias-label-secondary)}
 .dpe-body{display:flex;flex-direction:column;min-width:0}
 .dpe-io:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid var(--dsw-focus-ring-color,var(--dsw-alias-brand-primary));outline-offset:-2px}
 .dpe-line{margin:0;padding:0;white-space:pre-wrap;overflow-wrap:anywhere;color:inherit;border:none;background:none;font:inherit;text-align:left}
@@ -495,8 +495,7 @@ button.dpe-hit-name:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid 
                 className: 'dpe-io',
                 id: bodyId,
                 role: bodyLabel === undefined ? undefined : 'group',
-                'aria-label': bodyLabel,
-                tabIndex: 0
+                'aria-label': bodyLabel
               },
               body
             ),
@@ -569,15 +568,16 @@ button.dpe-hit-name:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid 
       );
     }
 
-    /** Expanded search body: one meta line, left-aligned hit lines, plain footer text. */
+    /** Expanded search body: one meta line, at most CARD_ROW_DISPLAY hit lines, plain footer. */
     function SearchBody(props) {
       const { model, localeTag, openFile, t } = props;
+      const visible = model.rows.slice(0, CARD_ROW_DISPLAY);
       const totals =
         model.total === 1 ? t('search.matchOne') : t('search.matches', { total: formatCount(model.total, localeTag) });
       const parts = [totals];
       parts.push(
         t('search.showing', {
-          returned: formatCount(model.rows.length, localeTag),
+          returned: formatCount(visible.length, localeTag),
           total: formatCount(model.returned, localeTag)
         })
       );
@@ -589,23 +589,22 @@ button.dpe-hit-name:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid 
       );
       if (model.truncated) parts.push(t('search.truncatedWord'));
       const footer = [];
-      if (model.rows.length < model.returned) {
+      if (visible.length < model.returned) {
         footer.push(
           t('search.showingRows', {
-            shown: formatCount(model.rows.length, localeTag),
+            shown: formatCount(visible.length, localeTag),
             returned: formatCount(model.returned, localeTag)
           })
         );
       }
-      if (model.returned > CARD_ROW_LIMIT) footer.push(t('search.footerCapped', { cap: CARD_ROW_LIMIT }));
       if (model.truncated) footer.push(t('search.footerTruncated'));
       return [
         h(Line, { key: 'meta' }, parts.join(' · ')),
-        model.rows.length > 0
+        visible.length > 0
           ? h(
               'ul',
               { key: 'list', className: 'dpe-hit-list' },
-              model.rows.map((row, index) => h(SearchHit, { key: `${index}:${row.path}`, row, openFile, localeTag, t }))
+              visible.map((row, index) => h(SearchHit, { key: `${index}:${row.path}`, row, openFile, localeTag, t }))
             )
           : null,
         model.rows.length === 0

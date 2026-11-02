@@ -339,6 +339,40 @@ check('empty search row says there are no matches', emptyRow.includes('无匹配
 const emptyBody = textOf(search(propsFor('everything_search', emptySearchBlock, 'result', true)));
 check('empty search card explains how to widen the query', emptyBody.includes('没有匹配的文件或文件夹') && emptyBody.includes('通配符'), emptyBody.slice(-400));
 
+const manyRows = [];
+for (let index = 0; index < 20; index += 1) {
+  manyRows.push({
+    path: `C:\\data\\f${index}.md`,
+    name: `f${index}.md`,
+    folder: false,
+    size: 100 + index,
+    modified: '2026-01-02T03:04:05.000Z'
+  });
+}
+const manyBlock = {
+  callId: 'call_many',
+  kind: 'result',
+  content: [{ type: 'text', text: 'Showing 20 of 20 matches.' }],
+  isError: false,
+  meta: {
+    version: 1,
+    query: 'f',
+    total: 20,
+    returned: 20,
+    truncated: false,
+    sort: 'name',
+    descending: false,
+    shown: 20,
+    results: manyRows
+  },
+  args: argsView({ query: 'f' }),
+  subCalls: []
+};
+const manyBody = textOf(search(propsFor('everything_search', manyBlock, 'result', true)));
+check('search card folds the list at 8 lines', manyBody.includes('f7.md') && !manyBody.includes('f8.md'), manyBody.slice(0, 300));
+check('search card says how many rows it folded', manyBody.includes('仅显示前 8 项（共返回 20 项）'), manyBody.slice(-300));
+check('search card reports the visible/total counter', manyBody.includes('显示 8/20'), manyBody.slice(0, 300));
+
 const interruptedBlock = {
   callId: 'call_stop',
   kind: 'result',
