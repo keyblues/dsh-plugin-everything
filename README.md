@@ -43,13 +43,13 @@ Harness 里的 Agent 默认只能在工作区里逐个目录找文件，跨盘�
 ## 安装
 
 **最简：DSH 桌面端 → 插件 → 查看安装任务，在输入框里填 `dsh-plugin-everything` 即可。**
-安装器会从 npm registry 拉取最新版（当前 `1.0.3`），装完 `everything_search` /
+安装器会从 npm registry 拉取最新版（当前 `1.1.0`），装完 `everything_search` /
 `everything_status` 立即出现，无需重启 Harness。
 
 ### 方式一：npm 包（推荐）
 
 DSH 桌面端：插件 → 查看安装任务 → 输入 `dsh-plugin-everything`
-（指定版本写 `dsh-plugin-everything@1.0.3`）。
+（指定版本写 `dsh-plugin-everything@1.1.0`）。
 
 DSH CLI（需先初始化 desktop profile，并在 Desktop 完全退出后执行）：
 
@@ -65,9 +65,9 @@ dsh plugin --profile desktop add dsh-plugin-everything
 ### 方式二：GitHub Release / 本地 `.tgz`（离线、固定版本）
 
 1. 从 [Releases](https://github.com/keyblues/dsh-plugin-everything/releases) 下载
-   `dsh-plugin-everything-1.0.3.tgz`；
+   `dsh-plugin-everything-1.1.0.tgz`；
 2. 在桌面端安装框直接填该文件的绝对路径
-   （如 `C:\Downloads\dsh-plugin-everything-1.0.3.tgz`），或让 Agent 执行
+   （如 `C:\Downloads\dsh-plugin-everything-1.1.0.tgz`），或让 Agent 执行
    `plugin_manager install_bundle target=<tgz 路径>`。
 
 适合 npm 不可用、需要固定版本或离线安装的场景。
@@ -87,8 +87,8 @@ git clone https://github.com/keyblues/dsh-plugin-everything.git
 | 输入 | 说明 |
 | --- | --- |
 | `dsh-plugin-everything` | **npm 包名（推荐）**：从 npm registry 安装最新版 |
-| `dsh-plugin-everything@1.0.3` | npm 包名 + 指定版本 |
-| `C:\Downloads\dsh-plugin-everything-1.0.3.tgz` | 本地 Release 包 / `.tgz` 路径 |
+| `dsh-plugin-everything@1.1.0` | npm 包名 + 指定版本 |
+| `C:\Downloads\dsh-plugin-everything-1.1.0.tgz` | 本地 Release 包 / `.tgz` 路径 |
 | `C:\path\to\everything-plugin` | 本地目录（clone 的源码目录） |
 | `https://github.com/keyblues/dsh-plugin-everything` | GitHub 仓库地址；安装时 pnpm 仍需直连 github.com，网络受限时会 `ECONNRESET`，可点界面上的「改用国内镜像」，或改用包名 / 本地路径 |
 
@@ -128,6 +128,26 @@ size:>10mb dm:today                  # 大于 10MB 且今天修改
 ```
 
 > 完整语法见 [Everything 搜索语法](https://www.voidtools.com/support/everything/searching/)。
+
+## 工具卡片（Web 界面）
+
+插件带一个 Client 半 `client.js`，向 Web 界面的 `tool.call.toolview` 槽位注册了两张卡片，
+所以 `everything_search` / `everything_status` 在对话里不再是通用工具行，而是有专门的卡片样式：
+
+| 卡片 | 收起状态（一行） | 展开状态 |
+| --- | --- | --- |
+| **Everything 搜索** | 搜索图标 + 标题 + 搜索词 + `返回/命中` 计数 | 统计行（命中总数 / 显示条数 / 排序 / 截断）与最多 8 行命中（文件/文件夹图标、文件名、所在目录、大小与修改时间，点击文件名在侧边栏打开）；超出 8 行用一行说明折起，完整结果仍在模型侧结果文本里 |
+| **Everything 状态** | 状态词 + 索引条目数 | 左对齐的 `状态/版本/索引条目/索引状态/平台/SDK DLL` 行；不可用时附错误原文与 `autoStart` 提示 |
+
+- **数据来源**：Host 侧 `output.presentationMeta` 投影（随结果持久化的结构化元数据），
+  卡片不解析模型可见的结果文本，因此含 `(`、`,` 的路径不会被误读。投影最多携带 100 行
+  结果以避免会话日志膨胀；模型看到的完整结果文本不变。
+- **主题**：只用 DSH 的 `--dsw-alias-*` 主题 token，浅色/深色自动适配；行高、字号跟随
+  界面的正文字号设置。
+- **文案**：中英双语，随界面语言切换（Client locale 字典）。
+- **兜底**：卡片组件包在崩溃边界里，渲染出错时退化成一行纯文本，不会留下空白行。
+- **生效方式**：Host 工具改动刷新后即生效；新增/更新 Client 半后需要重启一次 Harness
+  （或刷新 Web 界面）让浏览器加载新的客户端 bundle。
 
 ## 配置
 
@@ -193,7 +213,7 @@ DSH 会在两处强制执行该声明（0.2.1 的 app-boot / plugin-manager 已�
 确实需要冒险运行时，用**精确版本豁免**（不会放宽声明的范围）：
 
 ```powershell
-dsh plugin --profile desktop allow-version dsh-plugin-everything@1.0.3 --dsh-version <运行时版本> --accept-risk
+dsh plugin --profile desktop allow-version dsh-plugin-everything@1.1.0 --dsh-version <运行时版本> --accept-risk
 ```
 
 或在插件管理器里调用 `set_version_exemption`（需用户明确接受风险）。DSH 升级后，请先确认
@@ -207,6 +227,25 @@ dsh plugin --profile desktop allow-version dsh-plugin-everything@1.0.3 --dsh-ver
 - 结果包括 `$Recycle.Bin`、`WinSxS` 等系统目录；需要时用 `!$Recycle.Bin` 等语法排除。
 
 ## 验证记录
+
+### v1.1.0（工具卡片）
+
+- **静态检查**：`node --check client.js` 通过；`package.json` JSON 合法；`dsh.client` 声明
+  （`platform: "web"`、`immediately`、`inject: ["@deepseek-ai/dsh-client-ui-tool"]`）与
+  `exports["./client"]` 符合 DSH `dsh-client-modules` 的解析规则。
+- **冒烟测试**（`npm test`）：Host 侧校验 `presentationMeta` 投影的字段、100 行上限、
+  非法行过滤、可用/不可用/错误三类状态，并确认模型可见的结果文本未改变；Client 侧在
+  无头环境执行 bundle、检查两张卡片注册到的 key、样式表与中英字典键，并渲染收起/展开、
+  查询词、计数、截断、空结果、失败、未运行、fallback、崩溃边界等状态。
+- **运行期**：`dsh.client` 元数据在 Host 启动时按包缓存（`pkgMeta` 直到重启才重新解析），
+  因此新增 Client 半**需要重启一次 DSH Desktop** 才会加载。重启后运行
+  `node scripts/verify-live.mjs`（自动读取 `$env:DSH_WEB_URL`）可验证 V1 插件图里出现
+  `dsh-plugin-everything` 行、V2 该行的 bundle 能取到且是 `window.__ModuleLoader__` 注册。
+- **视觉验证**：自动化环境没有浏览器控制，卡片观感需在 GUI 内人工确认；卡片按第一方
+  ToolRow 的行高（`24px + 内容字号增量`）、字号（`--dsh-content-font-size-secondary`）、
+  2px 分隔点与 `--dsw-alias-*` 主题 token 对齐，浅色/深色由 token 自动切换。
+
+### v1.0.3
 
 - `install_bundle` 安装返回 `application: applied`、`enabled: true`、无 warning。
 - 真实查询：`notepad.exe`（18 命中）、中文文件名、`path:`/`file:`/`folder:`/`ext:`

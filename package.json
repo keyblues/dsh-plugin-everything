@@ -1,7 +1,7 @@
 {
   "name": "dsh-plugin-everything",
-  "version": "1.0.3",
-  "description": "DeepSeek Harness (DSH) plugin: instant whole-disk file search through the local voidtools Everything index. DSH 插件：接入本机 Everything 索引，全盘秒级搜索文件。",
+  "version": "1.1.0",
+  "description": "DeepSeek Harness (DSH) plugin: instant whole-disk file search through the local voidtools Everything index, with dedicated Web UI tool cards. DSH 插件：接入本机 Everything 索引，全盘秒级搜索文件，并为 Web 界面提供专用工具卡片。",
   "keywords": [
     "dsh-plugin",
     "deepseek-harness",
@@ -31,6 +31,9 @@
   "publishConfig": {
     "access": "public"
   },
+  "scripts": {
+    "test": "node scripts/host-meta-smoke.mjs && node scripts/render-smoke.mjs"
+  },
   "type": "module",
   "os": [
     "win32"
@@ -40,11 +43,13 @@
   ],
   "exports": {
     ".": "./index.js",
+    "./client": "./client.js",
     "./locale/*.json": "./locale/*.json",
     "./icon": "./icon.svg"
   },
   "files": [
     "index.js",
+    "client.js",
     "sdk-worker.cjs",
     "native/Everything64.dll",
     "vendor/koffi/index.cjs",
@@ -68,6 +73,13 @@
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-tool"
+      ]
     }
   }
 }

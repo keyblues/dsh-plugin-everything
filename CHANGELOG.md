@@ -1,5 +1,25 @@
 # Changelog
 
+## v1.1.0 (2026-11-02)
+
+- **新增 Web 界面工具卡片（Client 半 `client.js`）**：通过 `dsh.client` 声明接入 Web 端，
+  向 keyed 槽位 `tool.call.toolview` 注册 `everything_search` / `everything_status` 两张卡片，
+  不再回退到通用工具行。
+  - **Everything 搜索**：收起行与官方工具行同构（`图标 标题 · 搜索词 返回/命中`，整行只有一个
+    分隔点）；展开后是一个细边框代码块观感的输出区：统计行（命中/显示/排序/截断）+ 最多 8 行
+    命中（文件/文件夹图标、文件名、所在目录、大小、修改时间，点击文件名可在侧边栏打开），
+    超出 8 行用一行说明折起，不再出现滚动条。
+  - **Everything 状态**：收起行 `状态词 索引条目数`；展开后是左对齐的
+    `状态/版本/索引条目/索引状态/平台/SDK DLL` 行，不可用时附错误原文与 `autoStart` 提示。
+  - 卡片数据来自 Host 侧新增的 `output.presentationMeta` 结构化投影（不是解析结果文本）：
+    最多 100 行结果，含 `query/total/returned/truncated/sort` 等字段；模型可见的结果文本不变。
+  - 样式只用 `--dsw-alias-*` 主题 token 与 `--dsh-content-*` 字号变量，浅色/深色自动适配；
+    行高、字号跟随界面正文字号设置；中英文案通过 Client locale 字典注册。
+  - 渲染包在崩溃边界内：卡片异常时退化为一行纯文本，不会留空白行。
+  - 新增 `scripts/host-meta-smoke.mjs` 与 `scripts/render-smoke.mjs` 两个无头冒烟测试
+    （Host 投影 + Client 渲染树），`npm test` 可跑。
+- README（中/英）新增「工具卡片」章节，版本号更新到 1.1.0。
+
 ## v1.0.3 (2026-10-27)
 
 - 精简模型可见的工具描述（`everything_search` / `everything_status` 及参数说明）：
