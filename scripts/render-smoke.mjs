@@ -164,7 +164,7 @@ const collect = (node, out = []) => {
       // Function component: evaluate it like the reconciler would.
       return collect(render(props), out);
     }
-    if (typeof props.children === 'string' || typeof props.children === 'number') out.push(String(props.children));
+    // Host element: `children` is authoritative (props.children mirrors it).
     for (const child of children) collect(child, out);
     return out;
   }
@@ -388,4 +388,12 @@ check('crash boundary degrades to a plain row', crashedText.includes('Everything
 check('crash boundary keeps the recorded result line', crashedText.includes('Showing 2 of 1234'), crashedText.slice(0, 200));
 
 console.log(`\n${failures === 0 ? 'PASS' : 'FAIL'}: ${failures} failure(s)`);
+if (failures === 0) {
+  console.log('\ncollapsed row previews (separator layout):');
+  console.log('  search ok     :', textOf(search(propsFor('everything_search', searchBlock, 'result', false))));
+  console.log('  search empty  :', textOf(search(propsFor('everything_search', emptySearchBlock, 'result', false))));
+  console.log('  search failed :', textOf(search(propsFor('everything_search', errorBlock, 'result', false))));
+  console.log('  status ok     :', textOf(status(propsFor('everything_status', statusBlock, 'result', false))));
+  console.log('  status down   :', textOf(status(propsFor('everything_status', unavailableStatusBlock, 'result', false))));
+}
 process.exit(failures === 0 ? 0 : 1);

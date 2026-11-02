@@ -377,11 +377,11 @@ window.__ModuleLoader__.load({
 .dpe-row[data-expandable]:hover .dpe-chevron,.dpe-row[data-open] .dpe-chevron{opacity:1}
 .dpe-row[data-open] .dpe-chevron{transform:rotate(90deg)}
 .dpe-title{flex:none;font-size:var(--dsh-content-font-size-secondary,13px);line-height:calc(24px + var(--dsh-content-font-delta,0px));color:inherit;white-space:nowrap}
-.dpe-sep{flex:none;width:2px;height:2px;margin:0 8px;border-radius:1px;background:var(--dsw-alias-label-caption,var(--dsw-alias-label-tertiary))}
-.dpe-summary{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--dsh-content-font-size-secondary,13px);line-height:calc(24px + var(--dsh-content-font-delta,0px));color:inherit}
-.dpe-summary[data-tone="error"]{color:var(--dsw-alias-state-error-primary)}
+.dpe-sep{flex:none;width:2px;height:2px;margin:0 6px;border-radius:1px;background:var(--dsw-alias-label-caption,var(--dsw-alias-label-tertiary))}
+.dpe-part{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--dsh-content-font-size-secondary,13px);line-height:calc(24px + var(--dsh-content-font-delta,0px));color:inherit}
+.dpe-part-fixed{flex:none}
+.dpe-part[data-tone="error"]{color:var(--dsw-alias-state-error-primary)}
 .dpe-root[data-state="error"] .dpe-leading,.dpe-root[data-state="stopped"] .dpe-leading{color:var(--dsw-alias-state-error-primary)}
-.dpe-suffix{flex:none;margin-left:8px;font-size:calc(var(--dsh-content-font-size-secondary,13px) - 1px);line-height:calc(24px + var(--dsh-content-font-delta,0px));color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums;white-space:nowrap}
 .dpe-body{margin:2px 0 4px 4px;padding:0;border:none;background:none;font-family:var(--dsh-font-family-code,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace);font-size:calc(var(--dsh-content-font-size-secondary,13px) - 2px);line-height:18px;color:var(--dsw-alias-label-tertiary)}
 .dpe-line{margin:0;padding:0;white-space:pre-wrap;overflow-wrap:anywhere;color:inherit}
 .dpe-hit{display:flex;align-items:baseline;gap:8px;min-width:0;padding:0;border:none;background:none;font:inherit;text-align:left;color:inherit;white-space:nowrap}
@@ -445,7 +445,7 @@ button.dpe-hit-name:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid 
      * first-party ToolRow, so its text stays selectable; Enter/Space toggles it.
      */
     function CardShell(props) {
-      const { toolName, title, glyph, summary, summaryTone, suffix, state, expandable } = props;
+      const { toolName, title, glyph, parts, firstTone, state, expandable } = props;
       const { disclosure, body, inspect, t, callId, bodyLabel } = props;
       const bodyId = callId === undefined ? undefined : `dpe-body-${callId}`;
       const open = expandable && disclosure.expanded;
@@ -465,6 +465,26 @@ button.dpe-hit-name:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid 
         rowProps.onKeyDown = onKeyDown;
       }
       if (open) rowProps['data-open'] = 'true';
+      // Every non-empty piece after the title is separated the same way: one
+      // 2px dot with the same margins, so the row reads as a single dim line
+      // instead of a title/body plus a detached suffix.
+      const pieces = [];
+      (Array.isArray(parts) ? parts : []).forEach((part, index) => {
+        if (typeof part !== 'string' || part === '') return;
+        pieces.push(h('span', { key: `sep:${index}`, className: 'dpe-sep', 'aria-hidden': true }));
+        pieces.push(
+          h(
+            'span',
+            {
+              key: `part:${index}`,
+              className: index === 0 ? 'dpe-part' : 'dpe-part dpe-part-fixed',
+              'data-tone': firstTone,
+              title: part
+            },
+            part
+          )
+        );
+      });
       return h(
         'div',
         { className: 'dpe-root', 'data-tool': toolName, 'data-state': state },
@@ -478,9 +498,7 @@ button.dpe-hit-name:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid 
             expandable && h('span', { className: 'dpe-chevron' }, h(ChevronGlyph))
           ),
           h('span', { className: 'dpe-title' }, title),
-          summary !== '' && h('span', { className: 'dpe-sep', 'aria-hidden': true }),
-          summary !== '' && h('span', { className: 'dpe-summary', 'data-tone': summaryTone, title: summary }, summary),
-          suffix !== undefined && suffix !== null && suffix !== '' && h('span', { className: 'dpe-suffix' }, suffix)
+          ...pieces
         ),
         open &&
           h(
@@ -645,22 +663,22 @@ button.dpe-hit-name:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid 
       const failedMessage = state === 'error' || state === 'stopped' ? recorded.replace(/^Error:\s*/i, '').trim() : '';
       const kind = state === 'ok' ? null : failureKind(failedMessage);
 
-      let summary = query;
-      let summaryTone;
+      const pieces = [];
+      let tone;
       if (running) {
-        summary = query === '' ? t(state === 'preparing' ? 'state.preparing' : 'state.searching') : query;
+        pieces.push(query === '' ? t(state === 'preparing' ? 'state.preparing' : 'state.searching') : query);
       } else if (state === 'error' || state === 'stopped') {
-        summary = failedMessage === '' ? t('search.failedTitle') : firstLine(failedMessage);
-        summaryTone = 'error';
-      }
-
-      let suffix = null;
-      if (model !== null && state === 'ok') {
-        if (model.returned === 0) suffix = t('search.noMatches');
-        else {
-          const parts = [`${formatCount(model.returned, localeTag)} / ${formatCount(model.total, localeTag)}`];
-          if (model.truncated) parts.push(t('search.truncatedWord'));
-          suffix = parts.join(' · ');
+        pieces.push(failedMessage === '' ? t('search.failedTitle') : firstLine(failedMessage));
+        tone = 'error';
+      } else {
+        pieces.push(query);
+        if (model !== null) {
+          if (model.returned === 0) {
+            pieces.push(t('search.noMatches'));
+          } else {
+            pieces.push(`${formatCount(model.returned, localeTag)} / ${formatCount(model.total, localeTag)}`);
+            if (model.truncated) pieces.push(t('search.truncatedWord'));
+          }
         }
       }
 
@@ -690,9 +708,8 @@ button.dpe-hit-name:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid 
         callId: props.callId,
         title: t('search.title'),
         glyph: h(SearchGlyph),
-        summary,
-        summaryTone,
-        suffix,
+        parts: pieces,
+        firstTone: tone,
         state,
         expandable,
         disclosure,
@@ -756,35 +773,39 @@ button.dpe-hit-name:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid 
       const model = meta === null ? null : normalizeStatusMeta(meta);
       const recorded = phase === 'result' ? resultText(block) : '';
 
+      const pieces = [];
+      let tone;
       let stateWord = t('status.state.unknown');
-      let summary = '';
-      let summaryTone;
       if (running) {
         stateWord = t('state.checking');
       } else if (state === 'error' || state === 'stopped') {
         stateWord = t('status.state.failed');
-        summary = firstLine(recorded.replace(/^Error:\s*/i, '').trim());
-        summaryTone = 'error';
+        tone = 'error';
       } else if (model === null) {
         stateWord = t('status.state.unknown');
-        summary = firstLine(recorded);
       } else if (model.available) {
         stateWord = t('status.state.available');
-        const parts = [];
-        if (model.clientVersion !== undefined) parts.push(`v${model.clientVersion}`);
+      } else {
+        const kind = model.error === undefined ? 'unavailable' : failureKind(model.error);
+        stateWord = kind === 'notRunning' ? t('status.state.notRunning') : t('status.state.unavailable');
+      }
+      pieces.push(stateWord);
+      if (state === 'error' || state === 'stopped') {
+        pieces.push(firstLine(recorded.replace(/^Error:\s*/i, '').trim()));
+      } else if (model === null) {
+        pieces.push(firstLine(recorded));
+      } else if (model.available) {
+        if (model.clientVersion !== undefined) pieces.push(`v${model.clientVersion}`);
         if (model.indexedItems !== undefined) {
-          parts.push(
+          pieces.push(
             t(model.indexedItems === 1 ? 'status.itemValue' : 'status.itemsValue', {
               n: formatCount(model.indexedItems, localeTag)
             })
           );
         }
-        if (model.databaseLoaded === false) parts.push(t('status.indexLoadingWord'));
-        summary = parts.join(' · ');
-      } else {
-        const kind = model.error === undefined ? 'unavailable' : failureKind(model.error);
-        stateWord = kind === 'notRunning' ? t('status.state.notRunning') : t('status.state.unavailable');
-        summary = model.error === undefined ? '' : firstLine(model.error);
+        if (model.databaseLoaded === false) pieces.push(t('status.indexLoadingWord'));
+      } else if (model.error !== undefined) {
+        pieces.push(firstLine(model.error));
       }
 
       let body = null;
@@ -808,9 +829,8 @@ button.dpe-hit-name:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid 
         callId: props.callId,
         title: t('status.title'),
         glyph: h(StatusGlyph),
-        summary: stateWord,
-        summaryTone,
-        suffix: summary,
+        parts: pieces,
+        firstTone: tone,
         state,
         expandable,
         disclosure,
@@ -857,7 +877,7 @@ button.dpe-hit-name:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid 
             { className: 'dpe-row' },
             h('span', { className: 'dpe-title' }, title),
             detail !== '' && h('span', { className: 'dpe-sep', 'aria-hidden': true }),
-            detail !== '' && h('span', { className: 'dpe-summary' }, detail)
+            detail !== '' && h('span', { className: 'dpe-part' }, detail)
           )
         );
       }
