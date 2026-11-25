@@ -278,7 +278,12 @@ var init_init = __esm({
 var { detectPlatform: detectPlatform2, loadDynamic: loadDynamic2, wrapNative: wrapNative2 } = (init_init(), __toCommonJS(init_exports));
 var { loadStatic } = require("./src/static.cjs");
 var [version, pkg, triplets] = detectPlatform2();
-var native = loadStatic(pkg) ?? loadDynamic2(__dirname, pkg, triplets);
+// Prefer the native module vendored next to this file. A bare-specifier
+// require('@koromix/koffi-<platform>-<arch>') resolves against the host's
+// node_modules, and DSH profiles are created with nodeLinker: hoisted, so the
+// host's own koffi copy (a different version) wins and wrapNative() below
+// throws "Mismatched native Koffi modules".
+var native = loadDynamic2(__dirname, pkg, triplets) ?? loadStatic(pkg);
 wrapNative2(native, version);
 module.exports = {
   default: native,
