@@ -32,7 +32,7 @@
     "access": "public"
   },
   "scripts": {
-    "test": "node scripts/host-meta-smoke.mjs && node scripts/render-smoke.mjs"
+    "test": "node scripts/host-meta-smoke.mjs && node scripts/render-smoke.mjs && node scripts/koffi-resolution-smoke.mjs"
   },
   "type": "module",
   "os": [

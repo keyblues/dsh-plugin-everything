@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- 修复：Everything SDK 加载失败并报 `Mismatched native Koffi modules`。DSH 创建 profile 时固定写入
+  `nodeLinker: hoisted`（`@deepseek-ai/dsh-app-boot` 的 `initProfile`），宿主根目录因此存在官方包
+  （`@deepseek-ai/dsh-fs-local`、`dsh-win32-process` 等）依赖的 `@koromix/koffi-win32-x64@3.1.1`；
+  `vendor/koffi/src/koffi/index.cjs` 原先先走 `loadStatic()`（裸包名解析），命中 3.1.1 后与自带的
+  3.3.4 版本校验失败。改为先走 `loadDynamic()`（显式指向 `vendor/@koromix/koffi-<platform>-<arch>`），
+  找不到再回退 `loadStatic()`。
+- 新增 `scripts/koffi-resolution-smoke.mjs` 回归测试：用 `NODE_PATH` 注入一个版本不符的同名包，
+  断言加载到的仍是自带的 3.3.4；非 win32-x64 平台跳过。已并入 `npm test`。
 - 描述改为差异化定位：官方 Everything SDK 在进程内调用（N-API FFI），不启动 `es.exe`、
   不监听 HTTP 端口，毫秒级返回结果；同步更新 README 中英版、`package.json` 描述、
   插件 locale 描述与 GitHub 仓库描述。
