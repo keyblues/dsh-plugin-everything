@@ -46,18 +46,25 @@ Harness 里的 Agent 默认只能在工作区里逐个目录找文件，跨盘�
 ## 安装
 
 **最简：DSH 桌面端 → 插件 → 查看安装任务，在输入框里填 `dsh-plugin-everything` 即可。**
-安装器会从 npm registry 拉取最新版（当前 `1.1.0`），装完 `everything_search` /
+安装器会从 npm registry 拉取最新版（当前 `1.1.1`），装完 `everything_search` /
 `everything_status` 立即出现，无需重启 Harness。
 
 ### 方式一：npm 包（推荐）
 
 DSH 桌面端：插件 → 查看安装任务 → 输入 `dsh-plugin-everything`
-（指定版本写 `dsh-plugin-everything@1.1.0`）。
+（指定版本写 `dsh-plugin-everything@1.1.1`）。
 
-DSH CLI（需先初始化 desktop profile，并在 Desktop 完全退出后执行）：
+DSH Desktop 自 `0.2.0-rc.2` 起提供 `dsh` 命令。先初始化 desktop profile 并完全退出 Desktop，再安装插件。
 
 ```powershell
 dsh plugin --profile desktop add dsh-plugin-everything
+```
+
+使用 npm 安装的 DSH 时，可将插件装入 Web profile 并启动。
+
+```powershell
+dsh plugin --profile web add dsh-plugin-everything
+dsh web
 ```
 
 更新到最新版：重复执行一次上述 `add`。固定版本用 `dsh-plugin-everything@<version>`。
@@ -68,9 +75,9 @@ dsh plugin --profile desktop add dsh-plugin-everything
 ### 方式二：GitHub Release / 本地 `.tgz`（离线、固定版本）
 
 1. 从 [Releases](https://github.com/keyblues/dsh-plugin-everything/releases) 下载
-   `dsh-plugin-everything-1.1.0.tgz`；
+   `dsh-plugin-everything-1.1.1.tgz`；
 2. 在桌面端安装框直接填该文件的绝对路径
-   （如 `C:\Downloads\dsh-plugin-everything-1.1.0.tgz`），或让 Agent 执行
+   （如 `C:\Downloads\dsh-plugin-everything-1.1.1.tgz`），或让 Agent 执行
    `plugin_manager install_bundle target=<tgz 路径>`。
 
 适合 npm 不可用、需要固定版本或离线安装的场景。
@@ -90,8 +97,8 @@ git clone https://github.com/keyblues/dsh-plugin-everything.git
 | 输入 | 说明 |
 | --- | --- |
 | `dsh-plugin-everything` | **npm 包名（推荐）**：从 npm registry 安装最新版 |
-| `dsh-plugin-everything@1.1.0` | npm 包名 + 指定版本 |
-| `C:\Downloads\dsh-plugin-everything-1.1.0.tgz` | 本地 Release 包 / `.tgz` 路径 |
+| `dsh-plugin-everything@1.1.1` | npm 包名 + 指定版本 |
+| `C:\Downloads\dsh-plugin-everything-1.1.1.tgz` | 本地 Release 包 / `.tgz` 路径 |
 | `C:\path\to\everything-plugin` | 本地目录（clone 的源码目录） |
 | `https://github.com/keyblues/dsh-plugin-everything` | GitHub 仓库地址；安装时 pnpm 仍需直连 github.com，网络受限时会 `ECONNRESET`，可点界面上的「改用国内镜像」，或改用包名 / 本地路径 |
 
@@ -188,8 +195,8 @@ index.js  ── worker_threads ──▶  sdk-worker.cjs
   [Everything-SDK.zip](https://www.voidtools.com/Everything-SDK.zip)），调用
   `Everything_SetSearchW` / `Everything_QueryW` / `Everything_GetResult*` 等导出函数，
   结构化拿到路径、大小与 FILETIME，不做文本解析。
-- **FFI**：Harness Host 是 Electron 44 / Node 24 运行时（Node-API 10），普通 Node 原生扩展
-  ABI 不匹配，因此使用 N-API FFI 模块 koffi 3.3.4（以及 win32-x64 预编译二进制）。
+- **FFI**：通过 koffi 3.3.4 的 Windows x64 预编译模块，从 Node.js 或 Electron 宿主
+  经 Node-API 调用 SDK DLL。
 - **无子进程、无端口**：查询路径是 worker → koffi → `Everything64.dll` → Everything IPC，
   不生成 `es.exe` 子进程，也不监听本地 HTTP 端口。
 - **Worker 隔离**：SDK 的 `Everything_QueryW(true)` 内部会无限等待 Everything 的 IPC
@@ -201,14 +208,14 @@ index.js  ── worker_threads ──▶  sdk-worker.cjs
 
 | 项目 | 说明 |
 | --- | --- |
-| 声明范围（`engines.dsh`） | `>=0.2.1-rc.2 <0.3.0-0` |
-| 实测版本 | DeepSeek Harness **0.2.1-rc.3**（Desktop：Electron 44.7 / Node 24.21 / Node-API 10） |
-| 契约一致性依据 | `@deepseek-ai/dsh-app-boot`、`dsh-tools`、`dsh-plugin-manager`、`dsh-package-manifest` 在 0.2.1-rc.2 与 rc.3 的发布产物逐字节一致；插件用到的扩展点（bundle patch、`ctx.tools.register` 的 ToolDefinition、插件显示元数据、安装与版本校验）在这两个版本间没有差异 |
-| 不在范围内 | **0.2.0 及更早**（核心包 API 不同，未验证）；**0.3.0 及以后**（DSH 仍为 developer preview，需重新验证后再放宽） |
+| 声明范围（`engines.dsh`） | `>=0.1.7-rc.1 <0.3.0-0` |
+| 最低完整实测 RC | **`0.1.7-rc.1`**（Windows x64，npm Web 与官方 Desktop 宿主） |
 
-npm 上 DSH 的 `latest` 标签当前是 `0.2.1-rc.2`，Desktop 运行时是 `0.2.1-rc.3`，都在声明范围内。
+在 `0.1.7-rc.1` 上安装本插件后，通过 Everything SDK 实际搜索和状态查询，并在 Web 界面
+展开两张工具卡片检查结果。Desktop 测试使用官方安装包构建 `0.1.7-rc.1.20260924.1`。
+更早的 `0.1.5-rc.3` 能执行两个工具。该版本的 Web 工具卡片接口缺少 `phase`，卡片无法进入结果状态。
 
-DSH 会在两处强制执行该声明（0.2.1 的 app-boot / plugin-manager 已内置）：
+从 `0.2.1-rc.1` 起，DSH 在安装和启动时校验 `engines.dsh`。更早版本使用旧的兼容性规则。
 
 - **安装时**：本地路径 / registry 包在 pnpm 运行前检查，不满足直接以 `incompatible-version`
   拒绝；tarball / git spec 在安装后判定并回滚。
@@ -218,7 +225,7 @@ DSH 会在两处强制执行该声明（0.2.1 的 app-boot / plugin-manager 已�
 确实需要冒险运行时，用**精确版本豁免**（不会放宽声明的范围）：
 
 ```powershell
-dsh plugin --profile desktop allow-version dsh-plugin-everything@1.1.0 --dsh-version <运行时版本> --accept-risk
+dsh plugin --profile desktop allow-version dsh-plugin-everything@1.1.1 --dsh-version <运行时版本> --accept-risk
 ```
 
 或在插件管理器里调用 `set_version_exemption`（需用户明确接受风险）。DSH 升级后，请先确认

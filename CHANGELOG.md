@@ -1,7 +1,9 @@
 # Changelog
 
-## Unreleased
+## v1.1.1 (2026-11-28)
 
+- 将 `engines.dsh` 下限降至 `0.1.7-rc.1`。实测 npm Web 与 Windows Desktop 宿主均可执行
+  Everything 搜索和状态查询，并显示完整的工具卡片结果。
 - 描述改为差异化定位：官方 Everything SDK 在进程内调用（N-API FFI），不启动 `es.exe`、
   不监听 HTTP 端口，毫秒级返回结果；同步更新 README 中英版、`package.json` 描述、
   插件 locale 描述与 GitHub 仓库描述。

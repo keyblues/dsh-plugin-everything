@@ -48,18 +48,26 @@ in milliseconds — the call goes straight to the SDK DLL in-process, with no su
 ## Install
 
 **TL;DR: in DSH Desktop open Plugins → install task and enter `dsh-plugin-everything`.**
-The installer pulls the latest version from the npm registry (currently `1.1.0`); the
+The installer pulls the latest version from the npm registry (currently `1.1.1`); the
 `everything_search` / `everything_status` tools appear immediately, no Harness restart needed.
 
 ### Option 1: npm package (recommended)
 
 DSH Desktop: Plugins → install task → enter `dsh-plugin-everything`
-(use `dsh-plugin-everything@1.1.0` to pin a version).
+(use `dsh-plugin-everything@1.1.1` to pin a version).
 
-DSH CLI (desktop profile must be initialized and Desktop fully quit first):
+DSH Desktop bundles the `dsh` command starting with `0.2.0-rc.2`. Initialize the desktop profile
+and fully quit Desktop before running this command.
 
 ```powershell
 dsh plugin --profile desktop add dsh-plugin-everything
+```
+
+With the npm build of DSH, install into the Web profile and start it.
+
+```powershell
+dsh plugin --profile web add dsh-plugin-everything
+dsh web
 ```
 
 Update to the latest version by running the same `add` again.
@@ -69,10 +77,10 @@ Update to the latest version by running the same `add` again.
 
 ### Option 2: GitHub release tarball / local `.tgz` (offline, pinned version)
 
-1. Download `dsh-plugin-everything-1.1.0.tgz` from
+1. Download `dsh-plugin-everything-1.1.1.tgz` from
    [Releases](https://github.com/keyblues/dsh-plugin-everything/releases).
 2. Enter that tarball's absolute path in the Desktop installer
-   (e.g. `C:\Downloads\dsh-plugin-everything-1.1.0.tgz`), or ask the agent to run
+   (e.g. `C:\Downloads\dsh-plugin-everything-1.1.1.tgz`), or ask the agent to run
    `plugin_manager install_bundle target=<tgz path>`.
 
 Useful when npm is unavailable or a fixed version must be installed offline.
@@ -91,8 +99,8 @@ Enter the directory's absolute path in the Desktop installer, or ask the agent t
 | Input | Notes |
 | --- | --- |
 | `dsh-plugin-everything` | **npm package name (recommended)**: installs the latest version from the npm registry |
-| `dsh-plugin-everything@1.1.0` | npm package name with a pinned version |
-| `C:\Downloads\dsh-plugin-everything-1.1.0.tgz` | local release tarball / `.tgz` path |
+| `dsh-plugin-everything@1.1.1` | npm package name with a pinned version |
+| `C:\Downloads\dsh-plugin-everything-1.1.1.tgz` | local release tarball / `.tgz` path |
 | `C:\path\to\everything-plugin` | local directory (a clone of this repository) |
 | `https://github.com/keyblues/dsh-plugin-everything` | GitHub repository address; pnpm still has to reach github.com, so a restricted network fails with `ECONNRESET` — use the “use mainland China mirror” action or one of the inputs above |
 
@@ -189,9 +197,8 @@ index.js  ── worker_threads ──▶  sdk-worker.cjs
   [Everything-SDK.zip](https://www.voidtools.com/Everything-SDK.zip)) is called through
   `Everything_SetSearchW` / `Everything_QueryW` / `Everything_GetResult*` — structured paths,
   sizes and FILETIME, no text parsing.
-- **FFI**: the Harness Host is an Electron 44 / Node 24 runtime (Node-API 10), so a regular Node
-  native addon ABI would not match; the plugin uses the N-API FFI module koffi 3.3.4 with its
-  win32-x64 prebuilt binary.
+- **FFI** uses the prebuilt Windows x64 koffi 3.3.4 module to call the SDK DLL through Node-API
+  from a Node.js or Electron Host.
 - **No subprocess, no port**: the query path is worker → koffi → `Everything64.dll` → Everything
   IPC; no `es.exe` child process is spawned and no local HTTP port is opened.
 - **Worker isolation**: `Everything_QueryW(true)` waits on the Everything IPC reply without a
@@ -204,15 +211,16 @@ index.js  ── worker_threads ──▶  sdk-worker.cjs
 
 | Item | Value |
 | --- | --- |
-| Declared range (`engines.dsh`) | `>=0.2.1-rc.2 <0.3.0-0` |
-| Tested runtime | DeepSeek Harness **0.2.1-rc.3** (Desktop: Electron 44.7 / Node 24.21 / Node-API 10) |
-| Contract parity evidence | `@deepseek-ai/dsh-app-boot`, `dsh-tools`, `dsh-plugin-manager` and `dsh-package-manifest` publish byte-identical artifacts at 0.2.1-rc.2 and rc.3; every extension point this plugin uses (bundle patch, the `ctx.tools.register` ToolDefinition, plugin display metadata, install and version checks) is unchanged between them |
-| Not covered | **0.2.0 and earlier** (different core package APIs, untested); **0.3.0 and later** (DSH is a developer preview, the range must be re-validated before widening) |
+| Declared range (`engines.dsh`) | `>=0.1.7-rc.1 <0.3.0-0` |
+| Earliest RC verified end to end | **`0.1.7-rc.1`** (Windows x64, npm Web and official Desktop Host) |
 
-The npm `latest` tag for DSH is currently `0.2.1-rc.2` and the Desktop runtime is `0.2.1-rc.3` —
-both inside the declared range.
+On `0.1.7-rc.1`, the installed plugin ran real search and status queries through the Everything SDK
+and displayed both expandable result cards in Web. The Desktop test used official installer build
+`0.1.7-rc.1.20260924.1`. Both tools also ran on `0.1.5-rc.3`. Its Web tool card API omits the
+`phase` prop, so the cards never reach their result state.
 
-DSH enforces the declaration in two places (built into app-boot / plugin-manager in 0.2.1):
+Starting with `0.2.1-rc.1`, DSH checks `engines.dsh` during installation and startup. Earlier
+releases use their original compatibility rules.
 
 - **Install**: local-path and registry specs are checked before pnpm runs and refused with
   `incompatible-version`; tarball and git specs are judged after installation and rolled back.
@@ -222,7 +230,7 @@ DSH enforces the declaration in two places (built into app-boot / plugin-manager
 To run anyway, grant an exact-version exemption (this does not widen the declared range):
 
 ```powershell
-dsh plugin --profile desktop allow-version dsh-plugin-everything@1.1.0 --dsh-version <runtime version> --accept-risk
+dsh plugin --profile desktop allow-version dsh-plugin-everything@1.1.1 --dsh-version <runtime version> --accept-risk
 ```
 
 or use `set_version_exemption` in the plugin manager after the user accepts the risk. After a DSH
